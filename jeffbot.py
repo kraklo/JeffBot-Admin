@@ -45,7 +45,7 @@ async def on_ready():
 
 @client.command(pass_context=True)
 async def add_player(ctx, user_id, name):
-    """Adds a player to the player list"""
+    """Adds a player to the player list (discord_id, nickname)"""
     if "Host" in [role.name for role in ctx.message.author.roles]:
         if ext.exists(user_id):
             await client.say('Player already exists.')
@@ -72,7 +72,7 @@ async def add_player(ctx, user_id, name):
 
 @client.command(pass_context=True)
 async def remove_player(ctx, user_id):
-    """Removes a player from the player list"""
+    """Removes a player from the player list (discord_id or nickname)"""
     if "Host" in [role.name for role in ctx.message.author.roles]:
         if ext.exists(user_id):
             ext.write("players.csv", [user_id], True)
@@ -166,7 +166,7 @@ async def read_votes(ctx):
 
 @client.command(pass_context=True)
 async def vote(ctx, player):
-    """Vote for a player for Tribal Council"""
+    """Vote for a player for Tribal Council (player's nickname)"""
     if ext.is_vote_time() and ext.exists(str(ctx.message.author)):
         user = str(ctx.message.author)
         if ext.voted(user):
