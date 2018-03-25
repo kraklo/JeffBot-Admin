@@ -15,6 +15,6 @@ Tokens must be kept in seperate files. For JeffBot, place the token in a file na
 ## Requirements
 
 * Python 3.6.2+
-* Rapptz's `discord.py1` library
+* Rapptz's `discord.py` library
 
 `pip` should handle the library for you. I recommend checking the [discord.py repository](https://github.com/Rapptz/discord.py) out yourself.
