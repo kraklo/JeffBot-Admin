@@ -44,58 +44,146 @@ async def on_ready():
 
 
 @client.command(pass_context=True)
-async def addplayer(ctx, userid, name):
+async def add_player(ctx, user_id, name):
     """Adds a player to the player list"""
-    if ext.exists(userid):
-        await client.say('Player already exists.')
+    if "Host" in [role.name for role in ctx.message.author.roles]:
+        if ext.exists(user_id):
+            await client.say('Player already exists.')
+        else:
+            ext.write("players.csv", [user_id, name, 'nobody'])
+            user = discord.utils.get(ctx.message.server.members, name=user_id[:-5])
+            role = discord.utils.get(ctx.message.server.roles, name="Castaway")
+            await client.say("Added user *{}* as *{}*".format(user_id, name))
+            try:
+                await client.change_nickname(user, name)
+            except discord.errors.Forbidden:
+                await client.say("Unable to change nickname. Please manually change {}'s nickname to {}.".format(user_id, name))
+            except AttributeError:
+                await client.say("Unable to change nickname. Please manually change {}'s nickname to {}.".format(user_id, name))
+            try:
+                await client.add_roles(user, role)
+            except discord.errors.Forbidden:
+                await client.say("Unable to add role *Castaway*. Please manually add role to player {}.".format(user_id))
+            except AttributeError:
+                await client.say("Unable to change nickname. Please manually change {}'s nickname to {}.".format(user_id, name))
     else:
-        ext.write("players.csv", [userid, name])
-        user = discord.utils.get(ctx.message.server.members, name=userid[:-5])
-        role = discord.utils.get(ctx.message.server.roles, name="Castaway")
-        await client.say("Added user *{}* as *{}*".format(userid, name))
-        try:
-            await client.change_nickname(user, name)
-        except:
-            await client.say("Unable to change nickname. Please manually change {}'s nickname to {}.".format(userid, name))
-        try:
-            await client.add_roles(user, role)
-        except:
-            await client.say("Unable to add role *Castaway*. Please manually add role to player {}.".format(userid))
+        await client.say("You are not a host.")
 
 
 @client.command(pass_context=True)
-async def removeplayer(ctx, userid):
+async def remove_player(ctx, user_id):
     """Removes a player from the player list"""
-    if ext.exists(userid):
-        ext.write("players.csv", [userid], True)
-        await client.say("Removed {} from player list.".format(userid))
-        role = discord.utils.get(ctx.message.server.roles, name="Castaway")
-        user = discord.utils.get(ctx.message.server.members, name=userid[:-5])
-        try:
-            await client.remove_roles(user, role)
-        except:
-            await client.say("Unable to remove role *Castaway*. Please manually remove role from player {}.".format(userid))
+    if "Host" in [role.name for role in ctx.message.author.roles]:
+        if ext.exists(user_id):
+            ext.write("players.csv", [user_id], True)
+            await client.say("Removed {} from player list.".format(user_id))
+            spec = discord.utils.get(ctx.message.server.roles, name="Spectator")
+            user = discord.utils.get(ctx.message.server.members, name=user_id[:-5])
+            try:
+                await client.replace_roles(user, spec)
+            except discord.errors.Forbidden:
+                await client.say("Unable to replace role *Castaway*. Please manually remove role from player {}.".format(user_id))
+            except AttributeError:
+                await client.say("Unable to replace role *Castaway*. Please manually remove role from player {}.".format(user_id))
+        else:
+            await client.say("{} was already not a player.".format(user_id))
     else:
-        await client.say("{} was already not a player.".format(userid))
+        await client.say("You are not a host.")
 
 
-@client.command()
-async def listplayers():
+@client.command(pass_context=True)
+async def list_players(ctx):
     """Lists all players in the player list"""
-    ids = ext.get("players.csv", 1)
-    nicks = ext.get("players.csv", 2)
-    for item in ids:
-        await client.say("{}: {}".format(nicks(item.index()), item))
-
-
-@client.command()
-async def votetime():
-    """Manually toggle if players can vote or not"""
-    ext.toggle("votetime")
-    if ext.isvotetime():
-        await client.say("Players can now no longer vote.")
+    if "Host" in [role.name for role in ctx.message.author.roles]:
+        ids = ext.get("players.csv", 1)
+        nicks = ext.get("players.csv", 2)
+        for item in ids:
+            await client.say("{}: {}".format(nicks[ids.index(item)], item))
     else:
-        await client.say("Players can now vote.")
+        await client.say("You are not a host.")
 
+
+@client.command(pass_context=True)
+async def vote_time(ctx):
+    """Manually toggle if players can vote or not"""
+    if "Host" in [role.name for role in ctx.message.author.roles]:
+        ext.toggle("vote_time")
+        if ext.is_vote_time():
+            await client.say("Players can now vote.")
+        else:
+            await client.say("Players can now no longer vote.")
+    else:
+        await client.say("You are not a host.")
+
+
+@client.command(pass_context=True)
+async def read_votes(ctx):
+    """Manually read the votes"""
+    if "Host" in [role.name for role in ctx.message.author.roles]:
+        if ext.is_vote_time():
+            ext.toggle("vote_time")
+        tally = {}
+        votes = ext.get("players.csv", 3)
+        for item in votes:
+            if item != 'nobody':
+                if item in tally:
+                    tally[item] += 1
+                else:
+                    tally[item] = 1
+        await client.say("The votes are as follows.")
+        for item in tally:
+            if tally[item] == 1:
+                await client.say("{} has 1 vote.".format(item))
+            else:
+                await client.say("{} has {} votes.".format(item, tally[item]))
+
+        highest = max(tally.values())
+        most = [a for a, b in tally.items() if b == highest]
+
+        if len(most) != 1:
+            await client.say("We have a tie!")
+        else:
+            await client.say("{}, the tribe has spoken.".format(most[0]))
+            player_id = ext.get("players.csv", 1, most[0])
+            user = discord.utils.get(ctx.message.server.members, name=player_id[:-5])
+            spec = discord.utils.get(ctx.message.server.roles, name="Spectator")
+            if len(ext.get("players.csv", 1)) <= 10:
+                spec = discord.utils.get(ctx.message.server.roles, name="Juror")
+            try:
+                await client.replace_roles(user, spec)
+            except discord.errors.Forbidden:
+                await client.say("Unable to replace role.")
+            except AttributeError:
+                await client.say("Unable to replace role.")
+            print(ext.get("players.csv", 2))
+
+        ids = ext.get("players.csv", 1)
+        for item in ids:
+            ext.write("players.csv", [item, ext.get("players.csv", 2, item), 'nobody'])
+    else:
+        await client.say("You are not a host.")
+
+
+@client.command(pass_context=True)
+async def vote(ctx, player):
+    """Vote for a player for Tribal Council"""
+    if ext.is_vote_time() and ext.exists(str(ctx.message.author)):
+        user = str(ctx.message.author)
+        if ext.voted(user):
+            if ext.same(user, player):
+                await client.say("Vote is already {}.".format(player))
+            else:
+                ext.write("players.csv", [user, ext.get("players.csv", 2, user), player])
+                await client.say("Vote changed to {}.".format(player))
+        else:
+            if ext.exists(player):
+                ext.write("players.csv", [user, ext.get("players.csv", 2, user), player])
+                await client.say("Voted for {}.".format(player))
+            else:
+                await client.say("That is not a player you can vote for.")
+    elif not ext.is_vote_time():
+        await client.say("You cannot vote at this time.")
+    else:
+        await client.say("You are not a player.")
 
 client.run(token)
