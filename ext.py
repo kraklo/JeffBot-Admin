@@ -25,27 +25,28 @@ SOFTWARE.
 
 def get(file, col, cond=''):
     # Gets a column from the specified csv file.
-    # Data is stored as playerid,nickname,vote
-    # If no one has voted, vote equals "nobody"
+    # Data is stored as player_id,nickname,vote
+    # If the player has not voted, vote equals "nobody"
     # If cond is set, it will only return the specified column if cond is in any column.
     f = open(file)
+    col -= 1
     if cond:
         for line in f:
-            data = line.strip().split('\n')
+            data = line.strip().split(',')
             if cond in data:
                 f.close()
-                return data[col + 1]
+                return data[col]
     else:
-        data = [line.strip().split(',')[col + 1] for line in f]
+        data = [line.strip().split(',')[col] for line in f]
         f.close()
         return data
-    f.close()
 
 
 def write(file, data, delete=False):
     # Writes a row to the specified csv file.
-    # Data is stored as playerid,nickname,vote
-    # Line to be written is passed as a list ([playerid, nickname])
+    # Data is stored as player_id,nickname,vote
+    # Line to be written is passed as a list ([player_id, nickname, vote])
+    # If the player has not voted, vote equals "nobody"
     # If delete is True, it will instead delete the row with the passed data
     f = open(file)
     new = ''
@@ -69,21 +70,21 @@ def toggle(file):
     if content == '1':
         f.write('0')
     elif content == '0':
-        f.write('0')
+        f.write('1')
     f.close()
 
 
-def exists(playerid):
+def exists(player_id):
     # Returns true if a player is in the player list
-    exist = get("players.csv", 1, playerid)
+    exist = get("players.csv", 1, player_id)
     if exist:
         return True
     return False
 
 
-def isvotetime():
+def is_vote_time():
     # Returns true if it voting has been allowed
-    time = get("votetime", 1)
+    time = get("vote_time", 1)
     if time[0] == '1':
         return True
     return False
@@ -106,3 +107,4 @@ def same(player, vote):
     if vote == who:
         return True
     return False
+
