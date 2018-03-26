@@ -65,7 +65,7 @@ async def add_player(ctx, user_id, name):
             except discord.errors.Forbidden:
                 await client.say("Unable to add role *Castaway*. Please manually add role to player {}.".format(user_id))
             except AttributeError:
-                await client.say("Unable to change nickname. Please manually change {}'s nickname to {}.".format(user_id, name))
+                await client.say("Unable to add role *Castaway*. Please manually add role to player {}.".format(user_id, name))
     else:
         await client.say("You are not a host.")
 
@@ -155,7 +155,7 @@ async def read_votes(ctx):
                 await client.say("Unable to replace role.")
             except AttributeError:
                 await client.say("Unable to replace role.")
-            print(ext.get("players.csv", 2))
+            ext.write("players.csv", [player_id], True)
 
         ids = ext.get("players.csv", 1)
         for item in ids:
