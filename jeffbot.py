@@ -92,13 +92,36 @@ async def remove_player(ctx, user_id):
 
 
 @client.command(pass_context=True)
-async def list_players(ctx):
-    """Lists all players in the player list"""
+async def show(ctx, what):
+    """Lists either the players in the player list, the players who have voted, or the players who haven't voted"""
     if "Host" in [role.name for role in ctx.message.author.roles]:
-        ids = ext.get("players.csv", 1)
-        nicks = ext.get("players.csv", 2)
-        for item in ids:
-            await client.say("{}: {}".format(nicks[ids.index(item)], item))
+        if what == "players":
+            ids = ext.get("players.csv", 1)
+            nicks = ext.get("players.csv", 2)
+            for item in ids:
+                await client.say("{}: {}".format(nicks[ids.index(item)], item))
+        elif what == "voted":
+            ids = ext.get("players.csv", 1)
+            voted = [ext.get("players.csv", 2, player) for player in ids if ext.voted(player)]
+            if not voted:
+                await client.say("Nobody has voted.")
+            elif len(ids) == len(voted):
+                await client.say("Everybody has voted.")
+            else:
+                for player in voted:
+                    await client.say(player)
+        elif what == "not_voted":
+            ids = ext.get("players.csv", 1)
+            not_voted = [ext.get("players.csv", 2, player) for player in ids if not ext.voted(player)]
+            if not not_voted:
+                await client.say("Everybody has voted.")
+            elif len(ids) == len(not_voted):
+                await client.say("Nobody has voted.")
+            else:
+                for player in not_voted:
+                    await client.say(player)
+        else:
+            await client.say("Please enter a valid argument (players, voted, not_voted).")
     else:
         await client.say("You are not a host.")
 
