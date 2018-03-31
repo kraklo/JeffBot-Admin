@@ -250,4 +250,24 @@ async def sort_tribes(ctx, tribe1, tribe2):
     else:
         await client.say("You are not a host.")
 
+
+@client.command(pass_context=True)
+async def merge_tribes(ctx, tribe):
+    """Merges players into a single tribe. (tribe)"""
+    if "Host" in [role.name for role in ctx.message.author.roles]:
+        ids = ext.get("players.csv", 1)
+        for player in ids:
+            ext.write("players.csv", [player, ext.get("players.csv", 2, player), tribe, 'nobody'])
+            role = discord.utils.get(ctx.message.server.roles, name=tribe)
+            castaway = discord.utils.get(ctx.message.server.roles, name="Castaway")
+            user = discord.utils.get(ctx.message.server.members, name=player[:-5])
+            try:
+                client.replace_roles(user, role, castaway)
+            except:
+                await client.say("Unable to add {} role.".format(tribe))
+        ext.write("tribes.csv", ext.get("tribes.csv", 1)[1], True)
+        ext.write("tribes.csv", tribe)
+    else:
+        await client.say("You are not a host.")
+
 client.run(token)
