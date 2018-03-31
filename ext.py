@@ -25,9 +25,10 @@ SOFTWARE.
 
 def get(file, col, cond=''):
     # Gets a column from the specified csv file.
-    # Data is stored as player_id,nickname,vote
+    # Data is stored as player_id,nickname,tribe,vote
     # If the player has not voted, vote equals "nobody"
-    # If cond is set, it will only return the specified column if cond is in any column.
+    # If cond is set, it will only return the specified column if cond is in
+    # any column.
     f = open(file)
     col -= 1
     if cond:
@@ -44,7 +45,7 @@ def get(file, col, cond=''):
 
 def write(file, data, delete=False):
     # Writes a row to the specified csv file.
-    # Data is stored as player_id,nickname,vote
+    # Data is stored as player_id,nickname,tribe,vote
     # Line to be written is passed as a list ([player_id, nickname, vote])
     # If the player has not voted, vote equals "nobody"
     # If delete is True, it will instead delete the row with the passed data
@@ -74,9 +75,9 @@ def toggle(file):
     f.close()
 
 
-def exists(player_id):
-    # Returns true if a player is in the player list
-    exist = get("players.csv", 1, player_id)
+def exists(file, item):
+    # Returns true if an item is in a file
+    exist = get(file, 1, item)
     if exist:
         return True
     return False
@@ -93,7 +94,7 @@ def is_vote_time():
 def voted(voter):
     # Checks if player has already voted
     # voter is the player's Discord id
-    vote = get("players.csv", 3, voter)
+    vote = get("players.csv", 4, voter)
     if vote != 'nobody':
         return True
     return False
@@ -103,8 +104,19 @@ def same(player, vote):
     # Checks to see if the vote is the same
     # player is the player's Discord id
     # vote is the nickname of the person they have voted
-    who = get("players.csv", 3, player)
+    who = get("players.csv", 4, player)
     if vote == who:
         return True
     return False
 
+
+def get_tribal():
+    # Returns the tribe at tribal council
+    tribe = get("tribes.csv", 2, 'voting')
+    return tribe
+
+
+def set_tribal(tribe):
+    # Sets tribal council to a tribe
+    # tribe is the tribe to set tribal council to
+    write("tribes.csv", ['voting', tribe])

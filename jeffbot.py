@@ -1,5 +1,3 @@
-#!/usr/local/bin/python3.6
-
 """
 MIT License
 
@@ -26,6 +24,7 @@ SOFTWARE.
 
 from discord.ext import commands
 import discord
+import random
 import ext
 
 client = commands.Bot('j.')
@@ -47,10 +46,10 @@ async def on_ready():
 async def add_player(ctx, user_id, name):
     """Adds a player to the player list (discord_id, nickname)"""
     if "Host" in [role.name for role in ctx.message.author.roles]:
-        if ext.exists(user_id):
+        if ext.exists("players.csv", user_id):
             await client.say('Player already exists.')
         else:
-            ext.write("players.csv", [user_id, name, 'nobody'])
+            ext.write("players.csv", [user_id, name, 'no', 'nobody'])
             user = discord.utils.get(ctx.message.server.members, name=user_id[:-5])
             role = discord.utils.get(ctx.message.server.roles, name="Castaway")
             await client.say("Added user *{}* as *{}*".format(user_id, name))
@@ -74,7 +73,7 @@ async def add_player(ctx, user_id, name):
 async def remove_player(ctx, user_id):
     """Removes a player from the player list (discord_id or nickname)"""
     if "Host" in [role.name for role in ctx.message.author.roles]:
-        if ext.exists(user_id):
+        if ext.exists("players.csv", user_id):
             ext.write("players.csv", [user_id], True)
             await client.say("Removed {} from player list.".format(user_id))
             spec = discord.utils.get(ctx.message.server.roles, name="Spectator")
@@ -99,7 +98,7 @@ async def show(ctx, what):
             ids = ext.get("players.csv", 1)
             nicks = ext.get("players.csv", 2)
             for item in ids:
-                await client.say("{}: {}".format(nicks[ids.index(item)], item))
+                await client.say("{}: {}, {} tribe".format(item, nicks[ids.index(item)], ext.get("players.csv", 3, item)))
         elif what == "voted":
             ids = ext.get("players.csv", 1)
             voted = [ext.get("players.csv", 2, player) for player in ids if ext.voted(player)]
@@ -127,13 +126,20 @@ async def show(ctx, what):
 
 
 @client.command(pass_context=True)
-async def vote_time(ctx):
+async def vote_time(ctx, tribe=''):
     """Manually toggle if players can vote or not"""
     if "Host" in [role.name for role in ctx.message.author.roles]:
-        ext.toggle("vote_time")
-        if ext.is_vote_time():
+        if not ext.is_vote_time() and tribe and ext.exists("tribes.csv", tribe):
+            ext.toggle("vote_time")
+            ext.set_tribal(tribe)
             await client.say("Players can now vote.")
+        elif not tribe and not ext.is_vote_time():
+            await client.say("Specify a tribe to allow players to vote.")
+        elif not ext.is_vote_time() and not ext.exists("tribes.csv", tribe):
+            await client.say("Tribe {} does not exist.".format(tribe))
         else:
+            ext.toggle("vote_time")
+            ext.set_tribal('none')
             await client.say("Players can now no longer vote.")
     else:
         await client.say("You are not a host.")
@@ -146,7 +152,7 @@ async def read_votes(ctx):
         if ext.is_vote_time():
             ext.toggle("vote_time")
         tally = {}
-        votes = ext.get("players.csv", 3)
+        votes = ext.get("players.csv", 4)
         for item in votes:
             if item != 'nobody':
                 if item in tally:
@@ -182,7 +188,8 @@ async def read_votes(ctx):
 
         ids = ext.get("players.csv", 1)
         for item in ids:
-            ext.write("players.csv", [item, ext.get("players.csv", 2, item), 'nobody'])
+            ext.write("players.csv", [item, ext.get("players.csv", 2, item), ext.get_tribal(), 'nobody'])
+        ext.set_tribal('none')
     else:
         await client.say("You are not a host.")
 
@@ -190,17 +197,23 @@ async def read_votes(ctx):
 @client.command(pass_context=True)
 async def vote(ctx, player):
     """Vote for a player for Tribal Council (player's nickname)"""
-    if ext.is_vote_time() and ext.exists(str(ctx.message.author)):
+    if ext.is_vote_time() and ext.exists("players.csv",str(ctx.message.author)):
         user = str(ctx.message.author)
-        if ext.voted(user):
+        if "#" in player:
+            await client.say("Please use a player's nickname, not their id.")
+        elif ext.get_tribal() != ext.get("players.csv", 3, user):
+            await client.say("You are not in {} tribe.".format(ext.get_tribal()))
+        elif ext.get_tribal() != ext.get("players.csv", 3, player):
+            await client.say("{} is not in your tribe.".format(player))
+        elif ext.voted(user):
             if ext.same(user, player):
                 await client.say("Vote is already {}.".format(player))
             else:
-                ext.write("players.csv", [user, ext.get("players.csv", 2, user), player])
+                ext.write("players.csv", [user, ext.get("players.csv", 2, user), ext.get_tribal(), player])
                 await client.say("Vote changed to {}.".format(player))
         else:
-            if ext.exists(player):
-                ext.write("players.csv", [user, ext.get("players.csv", 2, user), player])
+            if ext.exists("players.csv", player):
+                ext.write("players.csv", [user, ext.get("players.csv", 2, user), ext.get_tribal(), player])
                 await client.say("Voted for {}.".format(player))
             else:
                 await client.say("That is not a player you can vote for.")
@@ -208,5 +221,33 @@ async def vote(ctx, player):
         await client.say("You cannot vote at this time.")
     else:
         await client.say("You are not a player.")
+
+
+@client.command(pass_context=True)
+async def sort_tribes(ctx, tribe1, tribe2):
+    """Sorts players into tribes. (tribe1, tribe2)"""
+    if "Host" in [role.name for role in ctx.message.author.roles]:
+        player_data = {}
+        tribes = [tribe1, tribe2]
+        counter = {tribe1: 0, tribe2: 0}
+        players = ext.get("players.csv", 1)
+        for player in players:
+            while True:
+                choice = random.choice(tribes)
+                if counter[choice] < len(players) / 2:
+                    counter[choice] += 1
+                    break
+            player_data[player] = [player, ext.get("players.csv", 2, player), choice, 'nobody']
+        for player in player_data:
+            ext.write("players.csv", player_data[player])
+            role = discord.utils.get(ctx.message.server.roles, name=player_data[player][2])
+            user = discord.utils.get(ctx.message.server.members, name=player_data[player][0][:-5])
+            try:
+                client.add_roles(user, role)
+            except:
+                await client.say("Unable to add {} role to {}.".format(player_data[player][2], player_data[player][0]))
+        ext.write("tribes.csv", [tribe1, tribe2])
+    else:
+        await client.say("You are not a host.")
 
 client.run(token)
