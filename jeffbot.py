@@ -163,13 +163,18 @@ async def read_votes(ctx):
             ext.toggle("vote_time")
         # Store a tally of players and the number of votes they have
         tally = {}
-        votes = ext.get("players.csv", 4)
+        votes = []
+        ids = ext.get("players.csv", 1)
+        for id in ids:
+            if ext.voted(id):
+                votes.append(ext.get("players.csv", 4, id))
+            elif ext.get("players.csv", 3, id) == ext.get_tribal():
+                votes.append(ext.get("players.csv", 2, id))
         for item in votes:
-            if item != 'nobody':
-                if item in tally:
-                    tally[item] += 1
-                else:
-                    tally[item] = 1
+            if item in tally:
+                tally[item] += 1
+            else:
+                tally[item] = 1
 
         # Print the data in tally
         await client.say("The votes are as follows.")
