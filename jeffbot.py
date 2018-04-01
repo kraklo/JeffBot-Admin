@@ -74,10 +74,11 @@ async def remove_player(ctx, user_id):
     """Removes a player from the player list (discord_id or nickname)"""
     if "Host" in [role.name for role in ctx.message.author.roles]:
         if ext.exists("players.csv", user_id):
+            id = ext.get("players.csv", 1, user_id)[:-5]
             ext.write("players.csv", [user_id], True)
             await client.say("Removed {} from player list.".format(user_id))
+            user = discord.utils.get(ctx.message.server.members, name=id)
             spec = discord.utils.get(ctx.message.server.roles, name="Spectator")
-            user = discord.utils.get(ctx.message.server.members, name=user_id[:-5])
             try:
                 await client.replace_roles(user, spec)
             except discord.errors.Forbidden:
@@ -271,9 +272,9 @@ async def sort_tribes(ctx, tribe1, tribe2):
                 name=player_data[player][0][:-5]
             )
             try:
-                client.add_roles(user, role)
-            except:
-                await client.say("Unable to add {} role to {}.".format(player_data[player][2], player_data[player][0]))
+                await client.add_roles(user, role)
+            except discord.errors.Forbidden:
+                await client.say("Unable to add {} role to {}. Forbidden.".format(player_data[player][2], player_data[player][0]))
         ext.write("tribes.csv", [tribe1, tribe2])
     else:
         await client.say("You are not a host.")
@@ -299,11 +300,13 @@ async def merge_tribes(ctx, tribe):
                 name=player[:-5]
             )
             try:
-                client.replace_roles(user, role, castaway)
-            except:
-                await client.say("Unable to add {} role.".format(tribe))
+                await client.replace_roles(user, role, castaway)
+            except discord.errors.Forbidden:
+                await client.say("Forbidden to add role.")
+            except AttributeError:
+                await client.say("Role {} does not exist.".format(tribe))
         ext.write("tribes.csv", ext.get("tribes.csv", 1)[1], True)
-        ext.write("tribes.csv", tribe)
+        ext.write("tribes.csv", [tribe])
     else:
         await client.say("You are not a host.")
 
