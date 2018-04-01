@@ -12,8 +12,8 @@ The token must be kept a separate file. For JeffBot, place the token in a file n
 
 Other files needed are:
 * `players.csv` for storing player data.
-* `tribes.csv` for storing tribe data.
-* `vote_time` for storing if players can vote.
+* `tribes.csv` for storing tribe data. As default data, please write `voting,none` as the first line and leave the rest blank.
+* `vote_time` for storing if players can vote. As default data, please write `0` as the first line.
 
 > NOTE: The bot must be run from the directory it is in.
 
