@@ -8,7 +8,7 @@ This was written mainly for my own ORGs, but it can also be used by anyone in th
 
 To install, copy all files to a single directory.
 
-The token must be kept in seperate files. For JeffBot, place the token in a file named `token`. The file must be in the same directory as the rest of the program.
+The token must be kept in separate files. For JeffBot, place the token in a file named `token`. The file must be in the same directory as the rest of the program.
 
 > NOTE: Both bots must be run from the directory they are in.
 
