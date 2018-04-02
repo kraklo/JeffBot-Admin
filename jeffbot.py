@@ -50,7 +50,7 @@ async def add_player(ctx, user_id, name):
             await client.say('Player already exists.')
         else:
             # Write to players.csv with the player data
-            ext.write("players.csv", [user_id, name, 'no', 'nobody'])
+            ext.Player(user_id).write(name, 'no')
             # Change nickname and role
             user = discord.utils.get(ctx.message.server.members, name=user_id[:-5])
             role = discord.utils.get(ctx.message.server.roles, name="Castaway")
@@ -72,25 +72,26 @@ async def add_player(ctx, user_id, name):
 
 
 @client.command(pass_context=True)
-async def remove_player(ctx, user_id):
+async def remove_player(ctx, nick):
     """Removes a player from the player list (discord_id or nickname)"""
     if "Host" in [role.name for role in ctx.message.author.roles]:
-        if ext.exists("players.csv", user_id):
-            id = ext.get("players.csv", 1, user_id)[:-5]
+        if ext.exists("players.csv", nick):
+            player = ext.Player(ext.get("players.csv", 1, nick))
+            id = player.user_id[:-5]
             # Delete player from players.csv
-            ext.write("players.csv", [user_id], True)
-            await client.say("Removed {} from player list.".format(user_id))
+            player.destroy()
+            await client.say("Removed {} from player list.".format(nick))
             # Replace Castaway role with Spectator
             user = discord.utils.get(ctx.message.server.members, name=id)
             spec = discord.utils.get(ctx.message.server.roles, name="Spectator")
             try:
                 await client.replace_roles(user, spec)
             except discord.errors.Forbidden:
-                await client.say("Unable to replace role *Castaway*. Please manually remove role from player {}.".format(user_id))
+                await client.say("Unable to replace role *Castaway*. Please manually remove role from player {}.".format(nick))
             except AttributeError:
-                await client.say("Unable to replace role *Castaway*. Please manually remove role from player {}.".format(user_id))
+                await client.say("Unable to replace role *Castaway*. Please manually remove role from player {}.".format(nick))
         else:
-            await client.say("{} was already not a player.".format(user_id))
+            await client.say("{} was already not a player.".format(nick))
     else:
         await client.say("You are not a host.")
 
@@ -101,28 +102,27 @@ async def show(ctx, what):
     if "Host" in [role.name for role in ctx.message.author.roles]:
         if what == "players":
             # Store player ids and then print data
-            ids = ext.get("players.csv", 1)
-            nicks = ext.get("players.csv", 2)
-            for item in ids:
-                await client.say("{}: {}, {} tribe".format(item, nicks[ids.index(item)], ext.get("players.csv", 3, item)))
+            players = ext.get_players()
+            for item in players:
+                await client.say("{}: {}, {} tribe".format(item.user_id, item.nick, item.tribe))
         elif what == "voted":
             # Get players who have voted
-            ids = ext.get("players.csv", 1)
-            voted = [ext.get("players.csv", 2, player) for player in ids if ext.voted(player)]
+            players = ext.get_players()
+            voted = [player.nick for player in players if ext.voted(player.user_id)]
             if not voted:
                 await client.say("Nobody has voted.")
-            elif len(ids) == len(voted):
+            elif len(players) == len(voted):
                 await client.say("Everybody has voted.")
             else:
                 for player in voted:
                     await client.say(player)
         elif what == "not_voted":
             # Get players who haven't voted
-            ids = ext.get("players.csv", 1)
-            not_voted = [ext.get("players.csv", 2, player) for player in ids if not ext.voted(player)]
+            players = ext.get_players()
+            not_voted = [player.nick for player in players if not ext.voted(player.user_id)]
             if not not_voted:
                 await client.say("Everybody has voted.")
-            elif len(ids) == len(not_voted):
+            elif len(players) == len(not_voted):
                 await client.say("Nobody has voted.")
             else:
                 for player in not_voted:
@@ -164,12 +164,12 @@ async def read_votes(ctx):
         # Store a tally of players and the number of votes they have
         tally = {}
         votes = []
-        ids = ext.get("players.csv", 1)
-        for id in ids:
-            if ext.voted(id):
-                votes.append(ext.get("players.csv", 4, id))
-            elif ext.get("players.csv", 3, id) == ext.get_tribal():
-                votes.append(ext.get("players.csv", 2, id))
+        players = ext.get_players()
+        for player in players:
+            if ext.voted(player.user_id):
+                votes.append(player.vote)
+            elif player.tribe == ext.get_tribal():
+                votes.append(player.nick)
         for item in votes:
             if item in tally:
                 tally[item] += 1
@@ -209,9 +209,9 @@ async def read_votes(ctx):
             ext.write("players.csv", [player_id], True)
 
         # Set everyone's vote to nobody
-        ids = ext.get("players.csv", 1)
-        for item in ids:
-            ext.write("players.csv", [item, ext.get("players.csv", 2, item), ext.get_tribal(), 'nobody'])
+        players = ext.get_players()
+        for player in players:
+            player.write()
         # Reset tribal
         ext.set_tribal('none')
     else:
@@ -223,38 +223,23 @@ async def vote(ctx, player):
     """Vote for a player for Tribal Council (player's nickname)"""
     exists = ext.exists("players.csv", str(ctx.message.author))
     if ext.is_vote_time() and exists:
-        user = str(ctx.message.author)
+        user = ext.Player(str(ctx.message.author))
         tribe = ext.get_tribal()
         if "#" in player:
             await client.say("Please use a player's nickname, not their id.")
-        elif tribe != ext.get("players.csv", 3, user):
+        elif tribe != user.tribe:
             await client.say("You are not in {} tribe.".format(tribe))
         elif tribe != ext.get("players.csv", 3, player):
             await client.say("{} is not in your tribe.".format(player))
-        elif ext.voted(user):
-            if ext.same(user, player):
+        elif ext.voted(user.user_id):
+            if ext.same(user.user_id, player):
                 await client.say("Vote is already {}.".format(player))
             else:
-                ext.write(
-                    "players.csv",
-                    [
-                        user,
-                        ext.get("players.csv", 2, user),
-                        ext.get_tribal(),
-                        player
-                    ]
-                )
+                user.write(vote=player)
                 await client.say("Vote changed to {}.".format(player))
         else:
             if ext.exists("players.csv", player):
-                ext.write(
-                    "players.csv",
-                    [
-                        user,
-                        ext.get("players.csv", 2, user), ext.get_tribal(),
-                        player
-                    ]
-                )
+                user.write(vote=player)
                 await client.say("Voted for {}.".format(player))
             else:
                 await client.say("That is not a player you can vote for.")
@@ -270,9 +255,9 @@ async def sort_tribes(ctx, tribe1, tribe2):
     if "Host" in [role.name for role in ctx.message.author.roles]:
         # Store all player data in a dict
         player_data = {}
+        players = ext.get_players()
         tribes = [tribe1, tribe2]
         counter = {tribe1: 0, tribe2: 0}
-        players = ext.get("players.csv", 1)
         for player in players:
             # Choose a random tribe
             while True:
@@ -281,31 +266,22 @@ async def sort_tribes(ctx, tribe1, tribe2):
                     counter[choice] += 1
                     break
             # Assign tribe to player
-            player_data[player] = [
-                player,
-                ext.get("players.csv", 2, player),
-                choice,
-                'nobody'
-            ]
-
-        for player in player_data:
-            # Write data to players.csv
-            ext.write("players.csv", player_data[player])
+            player.write(tribe=choice)
             # Change roles
             role = discord.utils.get(
                 ctx.message.server.roles,
-                name=player_data[player][2]
+                name=player.tribe
             )
             user = discord.utils.get(
                 ctx.message.server.members,
-                name=player_data[player][0][:-5]
+                name=player.user_id[:-5]
             )
             try:
                 await client.add_roles(user, role)
             except discord.errors.Forbidden:
-                await client.say("Unable to add {} role to {}. Forbidden.".format(player_data[player][2], player_data[player][0]))
+                await client.say("Unable to add {} role to {}. Forbidden.".format(player.tribe, player.nick))
             except AttributeError:
-                await client.say("Unable to add {} role to {}. Role does not exist.".format(player_data[player][2], player_data[player][0]))
+                await client.say("Unable to add {} role to {}. Role does not exist.".format(player.tribe, player.nick))
 
         # Write tribes to tribes.csv
         ext.write("tribes.csv", [tribe1, tribe2])
@@ -317,13 +293,10 @@ async def sort_tribes(ctx, tribe1, tribe2):
 async def merge_tribes(ctx, tribe):
     """Merges players into a single tribe. (tribe)"""
     if "Host" in [role.name for role in ctx.message.author.roles]:
-        ids = ext.get("players.csv", 1)
-        for player in ids:
+        players = ext.get_players()
+        for player in players:
             # Change tribe to new merge tribe
-            ext.write(
-                "players.csv",
-                [player, ext.get("players.csv", 2, player), tribe, 'nobody']
-            )
+            player.write(tribe=tribe)
             # Change roles
             role = discord.utils.get(ctx.message.server.roles, name=tribe)
             castaway = discord.utils.get(
@@ -332,7 +305,7 @@ async def merge_tribes(ctx, tribe):
             )
             user = discord.utils.get(
                 ctx.message.server.members,
-                name=player[:-5]
+                name=player.user_id[:-5]
             )
             try:
                 await client.replace_roles(user, role, castaway)
