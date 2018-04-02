@@ -209,6 +209,7 @@ async def read_votes(ctx):
             ext.write("players.csv", [player_id], True)
 
         # Set everyone's vote to nobody
+        players = ext.get_players()
         for player in players:
             player.write()
         # Reset tribal
@@ -257,7 +258,6 @@ async def sort_tribes(ctx, tribe1, tribe2):
         players = ext.get_players()
         tribes = [tribe1, tribe2]
         counter = {tribe1: 0, tribe2: 0}
-        players = ext.get("players.csv", 1)
         for player in players:
             # Choose a random tribe
             while True:
