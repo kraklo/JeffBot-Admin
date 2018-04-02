@@ -122,7 +122,7 @@ def set_tribal(tribe):
     write("tribes.csv", ['voting', tribe])
 
 
-class Player(object):
+class Player:
     # Class for a player
     def __init__(self, user_id):
         self.user_id = user_id
