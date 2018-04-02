@@ -123,6 +123,7 @@ def set_tribal(tribe):
 
 
 class Player(object):
+    # Class for a player
     def __init__(self, user_id):
         self.user_id = user_id
         self.nick = get("players.csv", 2, user_id)
@@ -130,6 +131,7 @@ class Player(object):
         self.vote = get("players.csv", 4, user_id)
 
     def write(self, nick='', tribe='', vote='nobody'):
+        # Write data for a player
         if nick:
             self.nick = nick
         if tribe:
@@ -138,12 +140,12 @@ class Player(object):
         write("players.csv", [self.user_id, self.nick, self.tribe, self.vote])
 
     def destroy(self):
+        # Delete a player
         write("players.csv", [self.user_id], True)
 
 
 def get_players():
+    # Return a list of all players
     ids = get("players.csv", 1)
-    players = []
-    for id in ids:
-        players.append(Player(id))
+    players = [Player(id) for id in ids]
     return players

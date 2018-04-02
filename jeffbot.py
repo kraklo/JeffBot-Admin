@@ -189,13 +189,13 @@ async def read_votes(ctx):
         most = [a for a, b in tally.items() if b == highest]
 
         if len(most) != 1:
-            # Print tie if thre are more than two people with the highest count
+            # Print tie if there are more than two people with the highest count
             await client.say("We have a tie!")
         else:
             await client.say("{}, the tribe has spoken.".format(most[0]))
-            player_id = ext.get("players.csv", 1, most[0])
+            player = ext.Player(ext.get("players.csv", 1, most[0]))
             # Replace role to either Spectator or Juror
-            user = discord.utils.get(ctx.message.server.members, name=player_id[:-5])
+            user = discord.utils.get(ctx.message.server.members, name=player.user_id[:-5])
             spec = discord.utils.get(ctx.message.server.roles, name="Spectator")
             if len(ext.get("players.csv", 1)) <= 10:
                 spec = discord.utils.get(ctx.message.server.roles, name="Juror")
@@ -206,7 +206,7 @@ async def read_votes(ctx):
             except AttributeError:
                 await client.say("Unable to replace role.")
             # Delete player from player list
-            ext.write("players.csv", [player_id], True)
+            player.destroy()
 
         # Set everyone's vote to nobody
         players = ext.get_players()
@@ -253,8 +253,6 @@ async def vote(ctx, player):
 async def sort_tribes(ctx, tribe1, tribe2):
     """Sorts players into tribes. (tribe1, tribe2)"""
     if "Host" in [role.name for role in ctx.message.author.roles]:
-        # Store all player data in a dict
-        player_data = {}
         players = ext.get_players()
         tribes = [tribe1, tribe2]
         counter = {tribe1: 0, tribe2: 0}
