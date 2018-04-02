@@ -130,9 +130,9 @@ class Player(object):
         self.vote = get("players.csv", 4, user_id)
 
     def write(self, nick='', tribe='', vote='nobody'):
-        if not nick:
+        if nick:
             self.nick = nick
-        if not tribe:
+        if tribe:
             self.tribe = tribe
         self.vote = vote
         write("players.csv", [self.user_id, self.nick, self.tribe, self.vote])
