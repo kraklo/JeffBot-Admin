@@ -120,3 +120,30 @@ def set_tribal(tribe):
     # Sets tribal council to a tribe
     # tribe is the tribe to set tribal council to
     write("tribes.csv", ['voting', tribe])
+
+
+class Player(object):
+    def __init__(self, user_id):
+        self.user_id = user_id
+        self.nick = get("players.csv", 2, user_id)
+        self.tribe = get("players.csv", 3, user_id)
+        self.vote = get("players.csv", 4, user_id)
+
+    def write(self, nick='', tribe='', vote='nobody'):
+        if not nick:
+            self.nick = nick
+        if not tribe:
+            self.tribe = tribe
+        self.vote = vote
+        write("players.csv", [self.user_id, self.nick, self.tribe, self.vote])
+
+    def destroy(self):
+        write("players.csv", [self.user_id], True)
+
+
+def get_players():
+    ids = get("players.csv", 1)
+    players = []
+    for id in ids:
+        players.append(Player(id))
+    return players
