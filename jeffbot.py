@@ -48,6 +48,8 @@ async def add_player(ctx, user_id, name):
     if "Host" in [role.name for role in ctx.message.author.roles]:
         if ext.exists("players.csv", user_id):
             await client.say('Player already exists.')
+        elif user_id[:-5] not in [mem.name for mem in ctx.message.server.members]:
+            await client.say("There is no {} in the server.".format(user_id))
         else:
             # Write to players.csv with the player data
             ext.Player(user_id).write(name, 'no')
