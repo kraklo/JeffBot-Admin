@@ -195,8 +195,8 @@ async def read_votes(ctx):
         # Toggle vote time if players can still vote
         if ext.is_vote_time():
             ext.toggle()
-        # Store a tally of players and the number of votes they have
-        tally = {}
+
+        # Store votes in a list
         votes = []
         players = ext.get_players()
         for player in players:
@@ -204,30 +204,29 @@ async def read_votes(ctx):
                 votes.append(player.vote)
             elif player.tribe == ext.get_tribal():
                 votes.append(player.nick)
-        for item in votes:
-            if item in tally:
-                tally[item] += 1
+
+        # Get the order to read the votes and who is out
+        final, out = ext.sort_votes(votes)
+
+        # Read the votes
+        count = 1
+        for vote in final:
+            if count == 1:
+                await client.say("1st vote: {}".format(vote))
+            elif count == 2:
+                await client.say("2nd vote: {}".format(vote))
+            elif count == 3:
+                await client.say("3rd vote: {}".format(vote))
             else:
-                tally[item] = 1
+                await client.say("{}th vote: {}".format(count, vote))
+            count += 1
 
-        # Print the data in tally
-        await client.say("The votes are as follows.")
-        for item in tally:
-            if tally[item] == 1:
-                await client.say("{} has 1 vote.".format(item))
-            else:
-                await client.say("{} has {} votes.".format(item, tally[item]))
-
-        # Calculate who has the most votes
-        highest = max(tally.values())
-        most = [a for a, b in tally.items() if b == highest]
-
-        if len(most) != 1:
+        if out is None:
             # Print tie if there are more than two people with the highest count
             await client.say("We have a tie!")
         else:
-            await client.say("{}, the tribe has spoken.".format(most[0]))
-            player = ext.Player(ext.get("players.csv", 1, most[0]))
+            await client.say("{}, the tribe has spoken.".format(out))
+            player = ext.Player(ext.get("players.csv", 1, out))
             # Replace role to either Spectator or Juror
             user = discord.utils.get(ctx.message.server.members, name=player.user_id[:-5])
             spec = discord.utils.get(ctx.message.server.roles, name="Spectator")

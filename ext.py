@@ -22,6 +22,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+import random
+
 
 def get(file, col, cond=''):
     # Gets a column from the specified csv file.
@@ -148,3 +150,39 @@ def get_players():
     ids = get("players.csv", 1)
     players = [Player(id) for id in ids]
     return players
+
+
+def sort_votes(votes):
+    # Return a list which contains the most amounts of votes that can be read
+    tally = {}
+    for item in votes:
+        if item in tally:
+            tally[item] += 1
+        else:
+            tally[item] = 1
+    highest = max(tally.values())
+    most = [a for a, b in tally.items() if b == highest]
+    if len(most) > 1:
+        random.shuffle(votes)
+        return votes, None
+    most = most[0]
+    majority = len(votes) // 2
+    if tally[most] > majority:
+        extra = tally[most] - majority
+        tally[most] -= extra
+        new = []
+        for item in tally:
+            for n in range(tally[item]):
+                new.append(item)
+        random.shuffle(new)
+        for n in range(extra):
+            new.append(most)
+    else:
+        tally[most] -= 1
+        new = []
+        for item in tally:
+            for n in range(tally[item]):
+                new.append(item)
+        random.shuffle(new)
+        new.append(most)
+    return new, most
