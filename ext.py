@@ -29,18 +29,16 @@ def get(file, col, cond=''):
     # If the player has not voted, vote equals "nobody"
     # If cond is set, it will only return the specified column if cond is in
     # any column.
-    f = open(file)
-    col -= 1
-    if cond:
-        for line in f:
-            data = line.strip().split(',')
-            if cond in data:
-                f.close()
-                return data[col]
-    else:
-        data = [line.strip().split(',')[col] for line in f]
-        f.close()
-        return data
+    with open(file) as f:
+        col -= 1
+        if cond:
+            for line in f:
+                data = line.strip().split(',')
+                if cond in data:
+                    return data[col]
+        else:
+            data = [line.strip().split(',')[col] for line in f]
+            return data
 
 
 def write(file, data, delete=False):
@@ -49,31 +47,28 @@ def write(file, data, delete=False):
     # Line to be written is passed as a list ([player_id, nickname, vote])
     # If the player has not voted, vote equals "nobody"
     # If delete is True, it will instead delete the row with the passed data
-    f = open(file)
     new = ''
-    for line in f:
-        if data[0] not in line:
-            new += line
-    f.close()
-    if not delete:
-        new += ','.join(data) + '\n'
-    f = open(file, 'w')
-    f.write(new)
-    f.close()
+    with open(file) as f:
+        for line in f:
+            if data[0] not in line:
+                new += line
+        if not delete:
+            new += ','.join(data) + '\n'
+    with open(file, 'w') as f:
+        f.write(new)
 
 
 def toggle():
     # Toggles vote time
     file = "vote_time"
-    f = open(file)
-    content = f.read().strip()
-    f.close()
-    f = open(file, 'w')
-    if content == '1':
-        f.write('0')
-    elif content == '0':
-        f.write('1')
-    f.close()
+    content = ''
+    with open(file) as f:
+        content = f.read().strip()
+    with open(file, 'w') as f:
+        if content == '1':
+            f.write('0')
+        elif content == '0':
+            f.write('1')
 
 
 def exists(file, item):
