@@ -62,8 +62,9 @@ def write(file, data, delete=False):
     f.close()
 
 
-def toggle(file):
+def toggle():
     # Toggles vote time
+    file = "vote_time"
     f = open(file)
     content = f.read().strip()
     f.close()
@@ -124,11 +125,14 @@ def set_tribal(tribe):
 
 class Player:
     # Class for a player
+
+    file = "players.csv"
+
     def __init__(self, user_id):
         self.user_id = user_id
-        self.nick = get("players.csv", 2, user_id)
-        self.tribe = get("players.csv", 3, user_id)
-        self.vote = get("players.csv", 4, user_id)
+        self.nick = get(self.file, 2, user_id)
+        self.tribe = get(self.file, 3, user_id)
+        self.vote = get(self.file, 4, user_id)
 
     def write(self, nick='', tribe='', vote='nobody'):
         # Write data for a player
@@ -137,11 +141,11 @@ class Player:
         if tribe:
             self.tribe = tribe
         self.vote = vote
-        write("players.csv", [self.user_id, self.nick, self.tribe, self.vote])
+        write(self.file, [self.user_id, self.nick, self.tribe, self.vote])
 
     def destroy(self):
         # Delete a player
-        write("players.csv", [self.user_id], True)
+        write(self.file, [self.user_id], True)
 
 
 def get_players():

@@ -141,7 +141,7 @@ async def vote_time(ctx, tribe=''):
     if "Host" in [role.name for role in ctx.message.author.roles]:
         if not ext.is_vote_time() and tribe and ext.exists("tribes.csv", tribe):
             # Toggle vote time and set tribal to tribe
-            ext.toggle("vote_time")
+            ext.toggle()
             ext.set_tribal(tribe)
             await client.say("Players can now vote.")
         elif not tribe and not ext.is_vote_time():
@@ -149,7 +149,7 @@ async def vote_time(ctx, tribe=''):
         elif not ext.is_vote_time() and not ext.exists("tribes.csv", tribe):
             await client.say("Tribe {} does not exist.".format(tribe))
         else:
-            ext.toggle("vote_time")
+            ext.toggle()
             ext.set_tribal('none')
             await client.say("Players can now no longer vote.")
     else:
@@ -162,7 +162,7 @@ async def read_votes(ctx):
     if "Host" in [role.name for role in ctx.message.author.roles]:
         # Toggle vote time if players can still vote
         if ext.is_vote_time():
-            ext.toggle("vote_time")
+            ext.toggle()
         # Store a tally of players and the number of votes they have
         tally = {}
         votes = []
