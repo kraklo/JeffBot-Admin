@@ -6,14 +6,7 @@ This was written mainly for my own ORGs, but it can also be used by anyone in th
 
 ## Installing
 
-To install, copy all files to a single directory.
-
-The token must be kept a separate file. For JeffBot, place the token in a file named `token`. The file must be in the same directory as the rest of the program.
-
-Other files needed are:
-* `players.csv` for storing player data.
-* `tribes.csv` for storing tribe data. As default data, please write `voting,none` as the first line and leave the rest blank.
-* `vote_time` for storing if players can vote. As default data, please write `0` as the first line.
+To install, copy all files to a single directory, then run `setup.py`. It will ask you for the token of your Discord bot. You are then ready to run `jeffbot.py`.
 
 > NOTE: The bot must be run from the directory it is in.
 
