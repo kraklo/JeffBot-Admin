@@ -121,10 +121,11 @@ async def show(ctx, what):
         elif what == "not_voted":
             # Get players who haven't voted
             players = ext.get_players()
-            not_voted = [player.nick for player in players if not ext.voted(player.user_id)]
+            not_voted_all = [player for player in players if not ext.voted(player.user_id)]
+            not_voted = [player.nick for player in not_voted_all if player.tribe == ext.get_tribal()]
             if not not_voted:
                 await client.say("Everybody has voted.")
-            elif len(players) == len(not_voted):
+            elif len(players) == len(not_voted_all):
                 await client.say("Nobody has voted.")
             else:
                 for player in not_voted:
