@@ -339,25 +339,28 @@ async def merge_tribes(ctx, tribe):
 async def rocks(ctx, *players):
     """Do rocks"""
     if ext.host(ctx):
-        await client.say("All players will draw a rock.")
-        await client.say(("The player who draws the black rock "
-                          "will be eliminated."))
-        # Get all players who will draw
-        player_list = ext.get_players()
-        tribe = ext.get("players.csv", 3, players[0])
-        choices = []
-        for player in player_list:
-            if player.nick not in players and player.tribe == tribe:
-                choices.append(player.nick)
-        # Choose a random player
-        out = random.choice(choices)
-        await client.say("{} has the black rock.".format(out))
-        await client.say("{}, the tribe has spoken.".format(out))
-        role = "Spectator"
-        if len(players) <= 10:
-            role = "Juror"
-        # Eliminate
-        await ext.remove_player(client, ctx, out, role)
+        if players:
+            await client.say("All players will draw a rock.")
+            await client.say(("The player who draws the black rock "
+                              "will be eliminated."))
+            # Get all players who will draw
+            player_list = ext.get_players()
+            tribe = ext.get("players.csv", 3, players[0])
+            choices = []
+            for player in player_list:
+                if player.nick not in players and player.tribe == tribe:
+                    choices.append(player.nick)
+            # Choose a random player
+            out = random.choice(choices)
+            await client.say("{} has the black rock.".format(out))
+            await client.say("{}, the tribe has spoken.".format(out))
+            role = "Spectator"
+            if len(players) <= 10:
+                role = "Juror"
+            # Eliminate
+            await ext.remove_player(client, ctx, out, role)
+        else:
+            await client.say("Please specify players who are safe.")
     else:
         await client.say("You are not a host.")
 
