@@ -335,6 +335,7 @@ async def merge_tribes(ctx, tribe):
 
 @client.command(pass_context=True)
 async def rocks(ctx, *players):
+    """Do rocks"""
     if ext.host(ctx):
         await client.say("All players will draw a rock.")
         await client.say("The player who draws the black rock will be eliminated.")
