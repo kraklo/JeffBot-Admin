@@ -60,15 +60,23 @@ async def add_player(ctx, user_id, name):
             try:
                 await client.change_nickname(user, name)
             except discord.errors.Forbidden:
-                await client.say("Unable to change nickname. Please manually change {}'s nickname to {}.".format(user_id, name))
+                await client.say(("Unable to change nickname. Please"
+                                  " manually change {}'s nickname "
+                                  "to {}.").format(user_id, name))
             except AttributeError:
-                await client.say("Unable to change nickname. Please manually change {}'s nickname to {}.".format(user_id, name))
+                await client.say(("Unable to change nickname. Please"
+                                  " manually change {}'s nickname "
+                                  "to {}.").format(user_id, name))
             try:
                 await client.add_roles(user, role)
             except discord.errors.Forbidden:
-                await client.say("Unable to add role *Castaway*. Please manually add role to player {}.".format(user_id))
+                await client.say(("Unable to add role *Castaway*. Please "
+                                  "manually add role to "
+                                  "player {}.").format(user_id))
             except AttributeError:
-                await client.say("Unable to add role *Castaway*. Please manually add role to player {}.".format(user_id, name))
+                await client.say((("Unable to add role *Castaway*. Please "
+                                  "manually add role to "
+                                  "player {}.").format(user_id))
     else:
         await client.say("You are not a host.")
 
@@ -89,7 +97,8 @@ async def remove_player(ctx, nick):
 
 @client.command(pass_context=True)
 async def show(ctx, *args):
-    """Lists either the players in the player list, the players who have voted, or the players who haven't voted"""
+    """Lists either the players in the player list, the players who have voted,
+     or the players who haven't voted"""
     if ext.host(ctx):
         if len(args) < 1:
             await client.say("Please enter an argument.")
@@ -211,7 +220,7 @@ async def read_votes(ctx):
             count += 1
 
         if out is None:
-            # Print tie if there are more than two people with the highest count
+            # Print tie if more than two people have the highest count
             await client.say("We have a tie!")
         else:
             await client.say("{}, the tribe has spoken.".format(out))
@@ -290,9 +299,11 @@ async def sort_tribes(ctx, tribe1, tribe2):
             try:
                 await client.add_roles(user, role)
             except discord.errors.Forbidden:
-                await client.say("Unable to add {} role to {}. Forbidden.".format(player.tribe, player.nick))
+                await client.say(("Unable to add {} role to {}. Forbidden."
+                                  "").format(player.tribe, player.nick))
             except AttributeError:
-                await client.say("Unable to add {} role to {}. Role does not exist.".format(player.tribe, player.nick))
+                await client.say(("Unable to add {} role to {}. Role does not "
+                                  "exist.").format(player.tribe, player.nick))
 
         # Write tribes to tribes.csv
         ext.write("tribes.csv", [tribe1, tribe2])
@@ -338,7 +349,8 @@ async def rocks(ctx, *players):
     """Do rocks"""
     if ext.host(ctx):
         await client.say("All players will draw a rock.")
-        await client.say("The player who draws the black rock will be eliminated.")
+        await client.say(("The player who draws the black rock "
+                          "will be eliminated."))
         # Get all players who will draw
         player_list = ext.get_players()
         tribe = ext.get("players.csv", 3, players[0])
