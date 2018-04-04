@@ -23,6 +23,7 @@ SOFTWARE.
 """
 
 import random
+import discord
 
 
 def get(file, col, cond=''):
@@ -186,3 +187,26 @@ def sort_votes(votes):
         random.shuffle(new)
         new.append(most)
     return new, most
+
+
+async def remove_player(client, ctx, nick, role):
+    # Removes a player and replaces their roles
+    player = Player(get("players.csv", 1, nick))
+    id = player.user_id[:-5]
+    # Delete player from players.csv
+    player.destroy()
+    # Replace roles with role
+    user = discord.utils.get(ctx.message.server.members, name=id)
+    spec = discord.utils.get(ctx.message.server.roles, name=role)
+    try:
+        await client.replace_roles(user, spec)
+    except discord.errors.Forbidden:
+        await client.say("Unable to replace role.")
+    except AttributeError:
+        await client.say("Unable to replace role.")
+
+
+def host(ctx):
+    if "Host" in [role.name for role in ctx.message.author.roles]:
+        return True
+    return False

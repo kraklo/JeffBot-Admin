@@ -45,7 +45,7 @@ async def on_ready():
 @client.command(pass_context=True)
 async def add_player(ctx, user_id, name):
     """Adds a player to the player list (discord_id, nickname)"""
-    if "Host" in [role.name for role in ctx.message.author.roles]:
+    if ext.host(ctx):
         if ext.exists("players.csv", user_id):
             await client.say('Player already exists.')
         elif user_id[:-5] not in [mem.name for mem in ctx.message.server.members]:
@@ -76,22 +76,11 @@ async def add_player(ctx, user_id, name):
 @client.command(pass_context=True)
 async def remove_player(ctx, nick):
     """Removes a player from the player list (discord_id or nickname)"""
-    if "Host" in [role.name for role in ctx.message.author.roles]:
+    if ext.host(ctx):
         if ext.exists("players.csv", nick):
-            player = ext.Player(ext.get("players.csv", 1, nick))
-            id = player.user_id[:-5]
-            # Delete player from players.csv
-            player.destroy()
+            # Remove the player
+            await ext.remove_player(client, ctx, nick, "Spectator")
             await client.say("Removed {} from player list.".format(nick))
-            # Replace Castaway role with Spectator
-            user = discord.utils.get(ctx.message.server.members, name=id)
-            spec = discord.utils.get(ctx.message.server.roles, name="Spectator")
-            try:
-                await client.replace_roles(user, spec)
-            except discord.errors.Forbidden:
-                await client.say("Unable to replace role *Castaway*. Please manually remove role from player {}.".format(nick))
-            except AttributeError:
-                await client.say("Unable to replace role *Castaway*. Please manually remove role from player {}.".format(nick))
         else:
             await client.say("{} was already not a player.".format(nick))
     else:
@@ -101,7 +90,7 @@ async def remove_player(ctx, nick):
 @client.command(pass_context=True)
 async def show(ctx, *args):
     """Lists either the players in the player list, the players who have voted, or the players who haven't voted"""
-    if "Host" in [role.name for role in ctx.message.author.roles]:
+    if ext.host(ctx):
         if len(args) < 1:
             await client.say("Please enter an argument.")
         elif args[0] == "players":
@@ -170,7 +159,7 @@ async def show(ctx, *args):
 @client.command(pass_context=True)
 async def vote_time(ctx, tribe=''):
     """Manually toggle if players can vote or not"""
-    if "Host" in [role.name for role in ctx.message.author.roles]:
+    if ext.host(ctx):
         if not tribe and not ext.is_vote_time():
             await client.say("Specify a tribe to allow players to vote.")
         elif not ext.is_vote_time() and ext.exists("tribes.csv", tribe):
@@ -191,7 +180,7 @@ async def vote_time(ctx, tribe=''):
 @client.command(pass_context=True)
 async def read_votes(ctx):
     """Manually read the votes"""
-    if "Host" in [role.name for role in ctx.message.author.roles]:
+    if ext.host(ctx):
         # Toggle vote time if players can still vote
         if ext.is_vote_time():
             ext.toggle()
@@ -226,20 +215,11 @@ async def read_votes(ctx):
             await client.say("We have a tie!")
         else:
             await client.say("{}, the tribe has spoken.".format(out))
-            player = ext.Player(ext.get("players.csv", 1, out))
-            # Replace role to either Spectator or Juror
-            user = discord.utils.get(ctx.message.server.members, name=player.user_id[:-5])
-            spec = discord.utils.get(ctx.message.server.roles, name="Spectator")
-            if len(ext.get("players.csv", 1)) <= 10:
-                spec = discord.utils.get(ctx.message.server.roles, name="Juror")
-            try:
-                await client.replace_roles(user, spec)
-            except discord.errors.Forbidden:
-                await client.say("Unable to replace role.")
-            except AttributeError:
-                await client.say("Unable to replace role.")
-            # Delete player from player list
-            player.destroy()
+            spec = "Spectator"
+            if len(players) <= 10:
+                spec = "Juror"
+            # Remove the player
+            await ext.remove_player(client, ctx, out, spec)
 
         # Set everyone's vote to nobody
         players = ext.get_players()
@@ -285,7 +265,7 @@ async def vote(ctx, player):
 @client.command(pass_context=True)
 async def sort_tribes(ctx, tribe1, tribe2):
     """Sorts players into tribes. (tribe1, tribe2)"""
-    if "Host" in [role.name for role in ctx.message.author.roles]:
+    if ext.host(ctx):
         players = ext.get_players()
         tribes = [tribe1, tribe2]
         counter = {tribe1: 0, tribe2: 0}
@@ -323,7 +303,7 @@ async def sort_tribes(ctx, tribe1, tribe2):
 @client.command(pass_context=True)
 async def merge_tribes(ctx, tribe):
     """Merges players into a single tribe. (tribe)"""
-    if "Host" in [role.name for role in ctx.message.author.roles]:
+    if ext.host(ctx):
         players = ext.get_players()
         for player in players:
             # Change tribe to new merge tribe
@@ -349,6 +329,31 @@ async def merge_tribes(ctx, tribe):
         ext.write("tribes.csv", ext.get("tribes.csv", 1)[1], True)
         # Write new tribe to tribes.csv
         ext.write("tribes.csv", [tribe])
+    else:
+        await client.say("You are not a host.")
+
+
+@client.command(pass_context=True)
+async def rocks(ctx, *players):
+    if ext.host(ctx):
+        await client.say("All players will draw a rock.")
+        await client.say("The player who draws the black rock will be eliminated.")
+        # Get all players who will draw
+        player_list = ext.get_players()
+        tribe = ext.get("players.csv", 3, players[0])
+        choices = []
+        for player in player_list:
+            if player.nick not in players and player.tribe == tribe:
+                choices.append(player.nick)
+        # Choose a random player
+        out = random.choice(choices)
+        await client.say("{} has the black rock.".format(out))
+        await client.say("{}, the tribe has spoken.".format(out))
+        role = "Spectator"
+        if len(players) <= 10:
+            role = "Juror"
+        # Eliminate
+        await ext.remove_player(client, ctx, out, role)
     else:
         await client.say("You are not a host.")
 
