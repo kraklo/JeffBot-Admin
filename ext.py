@@ -154,38 +154,49 @@ def get_players():
 
 
 def sort_votes(votes):
-    """Return a list which contains the most amounts of votes that
-    can be read"""
+    """Return a list which gives a more 'dramatic' vote order"""
+    # Grab a tally of the votes
     tally = {}
     for item in votes:
         if item in tally:
             tally[item] += 1
         else:
             tally[item] = 1
+    # Get who had the most votes
     highest = max(tally.values())
     most = [a for a, b in tally.items() if b == highest]
+    # If more than one person has the most votes, shuffle the vote order
+    # and return
     if len(most) > 1:
         random.shuffle(votes)
         return votes, None
     most = most[0]
     majority = len(votes) // 2
     if tally[most] > majority:
+        # If a player has more than majority, get how many more they have
         extra = tally[most] - majority
         tally[most] -= extra
         new = []
+        # Add all votes not including the extras to new
         for item in tally:
             for n in range(tally[item]):
                 new.append(item)
+        # Shuffle
         random.shuffle(new)
+        # Add extras back to new
         for n in range(extra):
             new.append(most)
     else:
+        # Remove one vote from the player out
         tally[most] -= 1
         new = []
+        # Add the rest to new
         for item in tally:
             for n in range(tally[item]):
                 new.append(item)
+        # Shuffle
         random.shuffle(new)
+        # Add the final vote back to the end of new
         new.append(most)
     return new, most
 
