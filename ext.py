@@ -27,11 +27,11 @@ import discord
 
 
 def get(file, col, cond=''):
-    # Gets a column from the specified csv file.
-    # Data is stored as player_id,nickname,tribe,vote
-    # If the player has not voted, vote equals "nobody"
-    # If cond is set, it will only return the specified column if cond is in
-    # any column.
+    """Gets a column from the specified csv file.
+    Data is stored as player_id,nickname,tribe,vote
+    If the player has not voted, vote equals "nobody"
+    If cond is set, it will only return the specified column if cond is in
+    any column."""
     with open(file) as f:
         col -= 1
         if cond:
@@ -45,11 +45,11 @@ def get(file, col, cond=''):
 
 
 def write(file, data, delete=False):
-    # Writes a row to the specified csv file.
-    # Data is stored as player_id,nickname,tribe,vote
-    # Line to be written is passed as a list ([player_id, nickname, vote])
-    # If the player has not voted, vote equals "nobody"
-    # If delete is True, it will instead delete the row with the passed data
+    """Writes a row to the specified csv file.
+    Data is stored as player_id,nickname,tribe,vote
+    Line to be written is passed as a list ([player_id, nickname, vote])
+    If the player has not voted, vote equals "nobody"
+    If delete is True, it will instead delete the row with the passed data"""
     new = ''
     with open(file) as f:
         for line in f:
@@ -62,7 +62,7 @@ def write(file, data, delete=False):
 
 
 def toggle():
-    # Toggles vote time
+    """Toggles vote time"""
     file = "vote_time"
     content = ''
     with open(file) as f:
@@ -75,7 +75,7 @@ def toggle():
 
 
 def exists(file, item):
-    # Returns true if an item is in a file
+    """Returns true if an item is in a file"""
     exist = get(file, 1, item)
     if exist:
         return True
@@ -83,7 +83,7 @@ def exists(file, item):
 
 
 def is_vote_time():
-    # Returns true if it voting has been allowed
+    """Returns true if it voting has been allowed"""
     time = get("vote_time", 1)
     if time[0] == '1':
         return True
@@ -91,8 +91,8 @@ def is_vote_time():
 
 
 def voted(voter):
-    # Checks if player has already voted
-    # voter is the player's Discord id
+    """Checks if player has already voted
+    voter is the player's Discord id"""
     vote = get("players.csv", 4, voter)
     if vote != 'nobody':
         return True
@@ -100,9 +100,9 @@ def voted(voter):
 
 
 def same(player, vote):
-    # Checks to see if the vote is the same
-    # player is the player's Discord id
-    # vote is the nickname of the person they have voted
+    """Checks to see if the vote is the same
+    player is the player's Discord id
+    vote is the nickname of the person they have voted"""
     who = get("players.csv", 4, player)
     if vote == who:
         return True
@@ -110,19 +110,19 @@ def same(player, vote):
 
 
 def get_tribal():
-    # Returns the tribe at tribal council
+    """Returns the tribe at tribal council"""
     tribe = get("tribes.csv", 2, 'voting')
     return tribe
 
 
 def set_tribal(tribe):
-    # Sets tribal council to a tribe
-    # tribe is the tribe to set tribal council to
+    """Sets tribal council to a tribe
+    tribe is the tribe to set tribal council to"""
     write("tribes.csv", ['voting', tribe])
 
 
 class Player:
-    # Class for a player
+    """Class for a player"""
 
     file = "players.csv"
 
@@ -133,7 +133,7 @@ class Player:
         self.vote = get(self.file, 4, user_id)
 
     def write(self, nick='', tribe='', vote='nobody'):
-        # Write data for a player
+        """Write data for a player"""
         if nick:
             self.nick = nick
         if tribe:
@@ -142,19 +142,20 @@ class Player:
         write(self.file, [self.user_id, self.nick, self.tribe, self.vote])
 
     def destroy(self):
-        # Delete a player
+        """Delete a player"""
         write(self.file, [self.user_id], True)
 
 
 def get_players():
-    # Return a list of all players
+    """Return a list of all players"""
     ids = get("players.csv", 1)
     players = [Player(id) for id in ids]
     return players
 
 
 def sort_votes(votes):
-    # Return a list which contains the most amounts of votes that can be read
+    """Return a list which contains the most amounts of votes that
+    can be read"""
     tally = {}
     for item in votes:
         if item in tally:
@@ -189,15 +190,32 @@ def sort_votes(votes):
     return new, most
 
 
+def get_player_object(ctx, player):
+    """Returns the object for a player"""
+    if isinstance(player, Player):
+        user_id = player.user_id[:-5]
+    elif '#' in player:
+        user_id = player[:-5]
+    else:
+        user_id = player
+    obj = discord.utils.get(ctx.message.server.members, name=user_id)
+    return obj
+
+
+def get_role_object(ctx, role):
+    """Returns the object for a role"""
+    obj = discord.utils.get(ctx.message.server.roles, name=role)
+    return obj
+
+
 async def remove_player(client, ctx, nick, role):
-    # Removes a player and replaces their roles
+    """Removes a player and replaces their roles"""
     player = Player(get("players.csv", 1, nick))
-    id = player.user_id[:-5]
     # Delete player from players.csv
     player.destroy()
     # Replace roles with role
-    user = discord.utils.get(ctx.message.server.members, name=id)
-    spec = discord.utils.get(ctx.message.server.roles, name=role)
+    user = get_player_object(ctx, player)
+    spec = get_role_object(ctx, "Spectator")
     try:
         await client.replace_roles(user, spec)
     except discord.errors.Forbidden:
@@ -207,6 +225,7 @@ async def remove_player(client, ctx, nick, role):
 
 
 def host(ctx):
+    """Returns true if player has host role"""
     if "Host" in [role.name for role in ctx.message.author.roles]:
         return True
     return False

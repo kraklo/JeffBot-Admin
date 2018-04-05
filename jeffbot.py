@@ -54,8 +54,8 @@ async def add_player(ctx, user_id, name):
             # Write to players.csv with the player data
             ext.Player(user_id).write(name, 'no')
             # Change nickname and role
-            user = discord.utils.get(ctx.message.server.members, name=user_id[:-5])
-            role = discord.utils.get(ctx.message.server.roles, name="Castaway")
+            user = ext.get_player_object(ctx, user_id)
+            role = ext.get_role_object(ctx, "Castaway")
             await client.say("Added user *{}* as *{}*".format(user_id, name))
             try:
                 await client.change_nickname(user, name)
@@ -214,7 +214,9 @@ async def read_votes(ctx):
             # Print tie if more than two people with the highest count
             await client.say("We have a tie!")
         else:
-            await client.say("{}, the tribe has spoken.".format(out))
+            player = ext.Player(ext.get("players.csv", 1, out))
+            obj = ext.get_player_object(ctx, player)
+            await client.say("{}, the tribe has spoken.".format(obj.mention))
             spec = "Spectator"
             if len(players) <= 10:
                 spec = "Juror"
@@ -279,14 +281,8 @@ async def sort_tribes(ctx, tribe1, tribe2):
             # Assign tribe to player
             player.write(tribe=choice)
             # Change roles
-            role = discord.utils.get(
-                ctx.message.server.roles,
-                name=player.tribe
-            )
-            user = discord.utils.get(
-                ctx.message.server.members,
-                name=player.user_id[:-5]
-            )
+            role = ext.get_role_object(ctx, player.tribe)
+            user = ext.get_player_object(ctx, player)
             try:
                 await client.add_roles(user, role)
             except discord.errors.Forbidden:
@@ -311,15 +307,9 @@ async def merge_tribes(ctx, tribe):
             # Change tribe to new merge tribe
             player.write(tribe=tribe)
             # Change roles
-            role = discord.utils.get(ctx.message.server.roles, name=tribe)
-            castaway = discord.utils.get(
-                ctx.message.server.roles,
-                name="Castaway"
-            )
-            user = discord.utils.get(
-                ctx.message.server.members,
-                name=player.user_id[:-5]
-            )
+            role = ext.get_role_object(ctx, tribe)
+            castaway = ext.get_role_object(ctx, "Castaway")
+            user = ext.get_player_object(ctx, player)
             try:
                 await client.replace_roles(user, role, castaway)
             except discord.errors.Forbidden:
@@ -337,7 +327,7 @@ async def merge_tribes(ctx, tribe):
 
 @client.command(pass_context=True)
 async def rocks(ctx, *players):
-    """Do rocks"""
+    """Do rocks. (players who the vote was between)"""
     if ext.host(ctx):
         if players:
             await client.say("All players will draw a rock.")
@@ -349,16 +339,17 @@ async def rocks(ctx, *players):
             choices = []
             for player in player_list:
                 if player.nick not in players and player.tribe == tribe:
-                    choices.append(player.nick)
+                    choices.append(player)
             # Choose a random player
             out = random.choice(choices)
-            await client.say("{} has the black rock.".format(out))
-            await client.say("{}, the tribe has spoken.".format(out))
+            obj = ext.get_player_object(ctx, out)
+            await client.say("{} has the black rock.".format(out.nick))
+            await client.say("{}, the tribe has spoken.".format(obj.mention))
             role = "Spectator"
             if len(players) <= 10:
                 role = "Juror"
             # Eliminate
-            await ext.remove_player(client, ctx, out, role)
+            await ext.remove_player(client, ctx, out.nick, role)
         else:
             await client.say("Please specify players who are safe.")
     else:
