@@ -176,28 +176,17 @@ def sort_votes(votes):
         # If a player has more than majority, get how many more they have
         extra = tally[most] - majority
         tally[most] -= extra
-        new = []
-        # Add all votes not including the extras to new
-        for item in tally:
-            for n in range(tally[item]):
-                new.append(item)
-        # Shuffle
-        random.shuffle(new)
-        # Add extras back to new
-        for n in range(extra):
-            new.append(most)
     else:
-        # Remove one vote from the player out
         tally[most] -= 1
-        new = []
-        # Add the rest to new
-        for item in tally:
-            for n in range(tally[item]):
-                new.append(item)
-        # Shuffle
-        random.shuffle(new)
-        # Add the final vote back to the end of new
-        new.append(most)
+    new = []
+    # Add the rest to new
+    for item in tally:
+        for n in range(tally[item]):
+            new.append(item)
+    # Shuffle
+    random.shuffle(new)
+    # Add the final vote back to the end of new
+    new.append(most)
     return new, most
 
 
