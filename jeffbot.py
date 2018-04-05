@@ -181,9 +181,8 @@ async def vote_time(ctx, tribe=''):
 async def read_votes(ctx):
     """Manually read the votes"""
     if ext.host(ctx):
-        # Toggle vote time if players can still vote
-        if ext.is_vote_time():
-            ext.toggle()
+        # Toggle vote time
+        ext.toggle()
 
         # Store votes in a list
         votes = []
@@ -217,9 +216,10 @@ async def read_votes(ctx):
             player = ext.Player(ext.get("players.csv", 1, out))
             obj = ext.get_player_object(ctx, player)
             await client.say("{}, the tribe has spoken.".format(obj.mention))
-            spec = "Spectator"
             if len(players) <= 10:
                 spec = "Juror"
+            else:
+                spec = "Spectator"
             # Remove the player
             await ext.remove_player(client, ctx, out, spec)
 
@@ -346,8 +346,10 @@ async def rocks(ctx, *players):
             await client.say("{} has the black rock.".format(out.nick))
             await client.say("{}, the tribe has spoken.".format(obj.mention))
             role = "Spectator"
-            if len(players) <= 10:
+            if len(players_list) <= 10:
                 role = "Juror"
+            else:
+                role = "Spectator"
             # Eliminate
             await ext.remove_player(client, ctx, out.nick, role)
         else:
