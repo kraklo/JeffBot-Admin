@@ -209,6 +209,9 @@ async def read_votes(ctx):
                 await client.say("{}th vote: {}".format(count, vote))
             count += 1
 
+            # Set everyone's vote to nobody
+            players = ext.get_players()
+
         if out is None:
             # Print tie if more than two people with the highest count
             await client.say("We have a tie!")
@@ -223,8 +226,6 @@ async def read_votes(ctx):
             # Remove the player
             await ext.remove_player(client, ctx, out, spec)
 
-        # Set everyone's vote to nobody
-        players = ext.get_players()
         for player in players:
             player.write()
         # Reset tribal
