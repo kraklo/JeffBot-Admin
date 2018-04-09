@@ -89,7 +89,8 @@ async def remove_player(ctx, nick):
 
 @client.command(pass_context=True)
 async def show(ctx, *args):
-    """Lists either the players in the player list, the players who have voted, or the players who haven't voted"""
+    """Lists either the players in the player list, the players who have
+    voted, or the players who haven't voted"""
     if ext.host(ctx):
         if len(args) < 1:
             await client.say("Please enter an argument.")
@@ -209,8 +210,10 @@ async def read_votes(ctx):
                 await client.say("{}th vote: {}".format(count, vote))
             count += 1
 
-            # Set everyone's vote to nobody
-            players = ext.get_players()
+        # Set everyone's vote to nobody
+        players = ext.get_players()
+        for player in players:
+            player.write()
 
         if out is None:
             # Print tie if more than two people with the highest count
@@ -225,9 +228,6 @@ async def read_votes(ctx):
                 spec = "Spectator"
             # Remove the player
             await ext.remove_player(client, ctx, out, spec)
-
-        for player in players:
-            player.write()
         # Reset tribal
         ext.set_tribal('none')
     else:
