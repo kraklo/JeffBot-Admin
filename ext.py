@@ -162,12 +162,24 @@ def sort_votes(votes):
             tally[item] += 1
         else:
             tally[item] = 1
+    # Check if a player is using an idol and handle accordingly
+    has_idol = []
+    for player in tally:
+        if get("idols.csv", 2, player) == "yes":
+            has_idol.append(player)
+    check = {}
+    for item in votes:
+        if item not in has_idol:
+            if item in check:
+                check[item] += 1
+            else:
+                check[item] = 1
     # Get who had the most votes
-    highest = max(tally.values())
-    most = [a for a, b in tally.items() if b == highest]
+    highest = max(check.values())
+    most = [a for a, b in check.items() if b == highest]
     # If more than one person has the most votes, shuffle the vote order
     # and return
-    if len(most) > 1:
+    if len(most) != 1:
         random.shuffle(votes)
         return votes, None
     most = most[0]
@@ -204,8 +216,7 @@ def get_player_object(ctx, player):
 
 def get_role_object(ctx, role):
     """Returns the object for a role"""
-    obj = discord.utils.get(ctx.message.server.roles, name=role)
-    return obj
+    return discord.utils.get(ctx.message.server.roles, name=role)
 
 
 async def remove_player(client, ctx, nick, role):
@@ -215,7 +226,7 @@ async def remove_player(client, ctx, nick, role):
     player.destroy()
     # Replace roles with role
     user = get_player_object(ctx, player)
-    spec = get_role_object(ctx, "Spectator")
+    spec = get_role_object(ctx, role)
     try:
         await client.replace_roles(user, spec)
     except discord.errors.Forbidden:

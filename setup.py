@@ -32,5 +32,8 @@ with open("tribes.csv", 'w+') as f:
 with open("vote_time", 'w+') as f:
     f.write('0')
 
+with open("idols.csv", 'w+') as f:
+    pass
+
 with open("token", 'w+') as f:
     f.write(input("Token: "))
