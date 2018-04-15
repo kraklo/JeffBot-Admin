@@ -204,7 +204,7 @@ async def show(ctx, *args):
                                 data += "{} is voting {}.".format(player.nick, player.vote)
                             if player != players[-1]:
                                 data += '\n'
-                            await client.say(data)
+                    await client.say(data)
                 else:
                     await client.say("Nobody has voted.")
             else:
