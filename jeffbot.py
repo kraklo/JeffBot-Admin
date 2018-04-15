@@ -164,11 +164,14 @@ async def show(ctx, *args):
         elif args[0] == "not_voted":
             # Get players who haven't voted
             players = ext.get_players()
-            not_voted_all = [player for player in players if not ext.voted(player.user_id)]
             not_voted = [player.nick for player in not_voted_all if player.tribe == ext.get_tribal()]
             if not not_voted:
                 await client.say("Everybody has voted.")
-            elif len(players) == len(not_voted_all):
+            # Check to see if nobody has voted
+            # HACK: this only works because any new data written is added
+            # to the bottom
+            # However, it changes O(n) to O(1)
+            elif players[-1].vote != "nobody":
                 await client.say("Nobody has voted.")
             else:
                 data = ''
@@ -199,8 +202,10 @@ async def show(ctx, *args):
             players = ext.get_players()
             if ext.is_vote_time():
                 # Check to see if anyone has voted
-                # Could maybe hack to if players[-1].vote != "nobody"
-                if [vote for vote in players if vote.vote != "nobody"]:
+                # HACK: this only works because any new data written is added
+                # to the bottom
+                # However, it changes O(n) to O(1)
+                if players[-1].vote != "nobody":
                     data = ""
                     for player in players:
                         if player.tribe == ext.get_tribal():
