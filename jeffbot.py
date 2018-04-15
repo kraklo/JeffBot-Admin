@@ -133,11 +133,14 @@ async def show(ctx, *args):
     voted, or the players who haven't voted"""
     if ext.host(ctx):
         if len(args) < 1:
+            # If no argument given, throw error message
             await client.say("Please enter an argument.")
         elif args[0] == "players":
             # Store player ids and then print data
             players = ext.get_players()
             data = ''
+            # Store all data in one string
+            # makes it quicker to print in Discord
             for item in players:
                 data += "{}: {}, {} tribe".format(item.user_id, item.nick, item.tribe)
                 if players[-1] != item:
@@ -192,8 +195,11 @@ async def show(ctx, *args):
                             data += '\n'
                 await client.say(data)
         elif args[0] == "votes":
+            # Get each player's vote
             players = ext.get_players()
             if ext.is_vote_time():
+                # Check to see if anyone has voted
+                # Could maybe hack to if players[-1].vote != "nobody"
                 if [vote for vote in players if vote.vote != "nobody"]:
                     data = ""
                     for player in players:
@@ -210,6 +216,7 @@ async def show(ctx, *args):
             else:
                 await client.say("Player cannot vote.")
         elif args[0] == "idols":
+            # Get all players with idols
             idols = ext.get("idols.csv", 1)
             if idols:
                 data = ""
