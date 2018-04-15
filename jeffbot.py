@@ -191,6 +191,39 @@ async def show(ctx, *args):
                             # Add a new line char if not last player in list
                             data += '\n'
                 await client.say(data)
+        elif args[0] == "votes":
+            players = ext.get_players()
+            if ext.is_vote_time():
+                if [vote for vote in players if vote.vote != "nobody"]:
+                    data = ""
+                    for player in players:
+                        if player.tribe == ext.get_tribal():
+                            if player.vote == "nobody":
+                                data += "{} hasn't voted yet.".format(player.nick)
+                            else:
+                                data += "{} is voting {}.".format(player.nick, player.vote)
+                            if player != players[-1]:
+                                data += '\n'
+                            await client.say(data)
+                else:
+                    await client.say("Nobody has voted.")
+            else:
+                await client.say("Player cannot vote.")
+        elif args[0] == "idols":
+            idols = ext.get("idols.csv", 1)
+            if idols:
+                data = ""
+                for player in idols:
+                    using = ext.get("idols.csv", 2, player)
+                    if using == "yes":
+                        data += "{}: using".format(player)
+                    else:
+                        data += "{}: not using".format(player)
+                    if player != idols[-1]:
+                        data += '\n'
+                await client.say(data)
+            else:
+                await client.say("Nobody has an idol.")
         else:
             await client.say("Please enter a valid argument.")
     else:
@@ -414,7 +447,7 @@ async def use_idol(ctx):
                 await client.say("You are already using your idol.")
             else:
                 ext.write("idols.csv", [player, "yes"])
-                await client.say("You have used your idol.")
+                await client.say("I can confirm this is a hidden immunity idol.")
         else:
             await client.say("You do not have an idol.")
     else:
