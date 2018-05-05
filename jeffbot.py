@@ -219,7 +219,7 @@ async def show(ctx, *args):
                 else:
                     await client.say("Nobody has voted.")
             else:
-                await client.say("Player cannot vote.")
+                await client.say("Players cannot vote.")
         elif args[0] == "idols":
             # Get all players with idols
             idols = ext.get("idols.csv", 1)
