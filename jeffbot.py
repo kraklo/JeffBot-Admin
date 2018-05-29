@@ -71,12 +71,12 @@ async def add(ctx, *args):
                         await client.say("Unable to change nickname. Please manually change {}'s nickname to {}.".format(user_id, name))
                     except AttributeError:
                         await client.say("Unable to change nickname. Please manually change {}'s nickname to {}.".format(user_id, name))
-                        try:
-                            await client.add_roles(user, role)
-                        except discord.errors.Forbidden:
-                            await client.say("Unable to add role *Castaway*. Please manually add role to player {}.".format(user_id))
-                        except AttributeError:
-                            await client.say("Unable to add role *Castaway*. Please manually add role to player {}.".format(user_id, name))
+                    try:
+                        await client.add_roles(user, role)
+                    except discord.errors.Forbidden:
+                        await client.say("Unable to add role *Castaway*. Please manually add role to player {}.".format(user_id))
+                    except AttributeError:
+                        await client.say("Unable to add role *Castaway*. Please manually add role to player {}.".format(user_id, name))
         elif args[0] == "idol":
             if len(args) < 2:
                 await client.say("Please specify a player.")
