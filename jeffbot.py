@@ -90,6 +90,24 @@ async def add(ctx, *args):
                     else:
                         ext.write("idols.csv", [player, "no"])
                         await client.say("Added idol.")
+        elif args[0] == "strike":
+            if len(args) < 2:
+                await client.say("Please specify a player.")
+            else:
+                player = args[1]
+                if not ext.exists("players.csv", player):
+                    await client.say("Player does not exist.")
+                else:
+                    player = ext.Player(ext.get("players.csv", 1, player))
+                    if player.strikes == 2:
+                        await client.say("{} has 3 strikes and is eliminated".format(player.nick))
+                        player.destroy()
+                    else:
+                        player.write(strike=True)
+                        if player.strikes > 1:
+                            await client.say("{} now has {} strikes.".format(player.nick, player.strikes))
+                        else:
+                            await client.say("{} now has {} strike.".format(player.nick, player.strikes))
         else:
             await client.say("Invalid argument.")
     else:
@@ -236,6 +254,17 @@ async def show(ctx, *args):
                 await client.say(data)
             else:
                 await client.say("Nobody has an idol.")
+        elif args[0] == "strikes":
+            players = ext.get_players()
+            data = ""
+            for player in players:
+                if player.strikes != 1:
+                    data += "{} has {} strikes.".format(player.nick, player.strikes)
+                else:
+                    data += "{} has 1 strike.".format(player.nick)
+                if player != players[-1]:
+                    data += "\n"
+            await client.say(data)
         else:
             await client.say("Please enter a valid argument.")
     else:
@@ -283,6 +312,23 @@ async def read_votes(ctx):
 
         # Get the order to read the votes and who is out
         final, out = ext.sort_votes(votes)
+        idols = ext.get_idols()
+
+        # Read out idols
+        if idols:
+            msg = ""
+            for player in idols:
+                if player == idols[0]:
+                    msg += "A reminder that {}".format(player)
+                elif player == idols[-1]:
+                    msg += " and {}".format(player)
+                else:
+                    msg += ", {}".format(player)
+            if len(idols) > 1:
+                msg += " are using idols."
+            else:
+                msg += " is using an idol."
+            await client.say(msg)
 
         # Read the votes
         count = 1
@@ -296,7 +342,7 @@ async def read_votes(ctx):
             else:
                 read = "{}th vote: {}".format(count, vote)
             count += 1
-            if ext.get("idols.csv", 2, vote) == "yes":
+            if vote in idols:
                 read += ", does not count"
             await client.say(read)
 

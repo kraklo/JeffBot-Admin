@@ -131,15 +131,21 @@ class Player:
         self.nick = get(self.file, 2, user_id)
         self.tribe = get(self.file, 3, user_id)
         self.vote = get(self.file, 4, user_id)
+        if exists("players.csv", user_id):
+            self.strikes = int(get(self.file, 5, user_id))
+        else:
+            self.strikes = 0
 
-    def write(self, nick='', tribe='', vote='nobody'):
+    def write(self, nick='', tribe='', vote='nobody', strike=False):
         """Write data for a player"""
         if nick:
             self.nick = nick
         if tribe:
             self.tribe = tribe
+        if strike:
+            self.strikes += 1
         self.vote = vote
-        write(self.file, [self.user_id, self.nick, self.tribe, self.vote])
+        write(self.file, [self.user_id, self.nick, self.tribe, self.vote, str(self.strikes)])
 
     def destroy(self):
         """Delete a player"""
@@ -153,6 +159,15 @@ def get_players():
     return players
 
 
+def get_idols():
+    players = get_players()
+    idols = []
+    for player in players:
+        if get("idols.csv", 2, player.nick) == "yes":
+            idols.append(player.nick)
+    return idols
+
+
 def sort_votes(votes):
     """Return a list which gives a more 'dramatic' vote order"""
     # Grab a tally of the votes
@@ -164,8 +179,9 @@ def sort_votes(votes):
             tally[item] = 1
     # Check if a player is using an idol and handle accordingly
     has_idol = []
+    idols = get_idols()
     for player in tally:
-        if get("idols.csv", 2, player) == "yes":
+        if player in idols:
             has_idol.append(player)
     check = {}
     for item in votes:
