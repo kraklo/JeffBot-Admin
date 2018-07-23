@@ -101,7 +101,11 @@ async def add(ctx, *args):
                     player = ext.Player(ext.get("players.csv", 1, player))
                     if player.strikes == 2:
                         await client.say("{} has 3 strikes and is eliminated".format(player.nick))
-                        player.destroy()
+                        if len(ext.get_players()) <= 10:
+                            role = "Juror"
+                        else:
+                            role = "Spectator"
+                        ext.remove_player(client, ctx, player.nick, role)
                     else:
                         player.write(strike=True)
                         if player.strikes > 1:
