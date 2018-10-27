@@ -44,76 +44,75 @@ async def on_ready():
 
 @client.command(pass_context=True)
 async def add(ctx, *args):
-    """Adds a player or idol to the database"""
+    """Adds a player, idol, or strike to the database"""
     if ext.host(ctx):
-        if len(args) == 0:
-            await clien.say("Please enter an argument (player, idol).")
-        elif args[0] == "player":
-            if len(args) < 3:
-                await client.say("Please specify a player and a nickname.")
+        # Checks to see if user running the command is a host
+
+        if len(args) != 2:
+            # Check for valid amount of arguments
+            if len(args) == 3:
+                cmd, user_id, name = args
             else:
-                user_id = args[1]
-                name = args[2]
-                if ext.exists("players.csv", user_id):
-                    await client.say('Player already exists.')
-                elif user_id[:-5] not in [mem.name for mem in ctx.message.server.members]:
-                    await client.say("There is no {} in the server.".format(user_id))
-                else:
-                    # Write to players.csv with the player data
-                    ext.Player(user_id).write(name, 'no')
-                    # Change nickname and role
-                    user = ext.get_player_object(ctx, user_id)
-                    role = ext.get_role_object(ctx, "Castaway")
-                    await client.say("Added user *{}* as *{}*".format(user_id, name))
-                    try:
-                        await client.change_nickname(user, name)
-                    except discord.errors.Forbidden:
-                        await client.say("Unable to change nickname. Please manually change {}'s nickname to {}.".format(user_id, name))
-                    except AttributeError:
-                        await client.say("Unable to change nickname. Please manually change {}'s nickname to {}.".format(user_id, name))
-                    try:
-                        await client.add_roles(user, role)
-                    except discord.errors.Forbidden:
-                        await client.say("Unable to add role *Castaway*. Please manually add role to player {}.".format(user_id))
-                    except AttributeError:
-                        await client.say("Unable to add role *Castaway*. Please manually add role to player {}.".format(user_id, name))
-        elif args[0] == "idol":
-            if len(args) < 2:
-                await client.say("Please specify a player.")
-            else:
-                player = args[1]
-                if not ext.exists("players.csv", player):
-                    await client.say("Player does not exist.")
-                else:
-                    if ext.exists("idols.csv", player):
-                        await client.say("Player already has an idol.")
-                    else:
-                        ext.write("idols.csv", [player, "no"])
-                        await client.say("Added idol.")
-        elif args[0] == "strike":
-            if len(args) < 2:
-                await client.say("Please specify a player.")
-            else:
-                player = args[1]
-                if not ext.exists("players.csv", player):
-                    await client.say("Player does not exist.")
-                else:
-                    player = ext.Player(ext.get("players.csv", 1, player))
-                    if player.strikes == 2:
-                        await client.say("{} has 3 strikes and is eliminated".format(player.nick))
-                        if len(ext.get_players()) <= 10:
-                            role = "Juror"
-                        else:
-                            role = "Spectator"
-                        ext.remove_player(client, ctx, player.nick, role)
-                    else:
-                        player.write(strike=True)
-                        if player.strikes > 1:
-                            await client.say("{} now has {} strikes.".format(player.nick, player.strikes))
-                        else:
-                            await client.say("{} now has {} strike.".format(player.nick, player.strikes))
+                await client.say("Please enter a valid amount of arguments.")
+                return 1
         else:
-            await client.say("Invalid argument.")
+            cmd, player = args
+            if not ext.exists("players.csv", player):
+                await client.say("Player does not exist.")
+                return 1
+
+        if cmd == "player":
+            if ext.exists("players.csv", user_id):
+                # Check if player already exists
+                await client.say('Player already exists.')
+            elif user_id[:-5] not in [mem.name for mem in ctx.message.server.members]:
+                # Check for player in server
+                await client.say("There is no {} in the server.".format(user_id))
+            else:
+                # Write to players.csv with the player data
+                ext.Player(user_id).write(name, 'no')
+                # Change nickname and role
+                user = ext.get_player_object(ctx, user_id)
+                role = ext.get_role_object(ctx, "Castaway")
+                await client.say("Added user *{}* as *{}*".format(user_id, name))
+                try:
+                    await client.change_nickname(user, name)
+                except discord.errors.Forbidden:
+                    await client.say("Unable to change nickname. Please manually change {}'s nickname to {}.".format(user_id, name))
+                except AttributeError:
+                    await client.say("Unable to change nickname. Please manually change {}'s nickname to {}.".format(user_id, name))
+                try:
+                    await client.add_roles(user, role)
+                except discord.errors.Forbidden:
+                    await client.say("Unable to add role *Castaway*. Please manually add role to player {}.".format(user_id))
+                except AttributeError:
+                    await client.say("Unable to add role *Castaway*. Please manually add role to player {}.".format(user_id))
+        elif cmd == "idol":
+            if ext.exists("idols.csv", player):
+                # Check if player already has an idol
+                # TODO: Allow players to have as many idols as they have found
+                await client.say("Player already has an idol.")
+            else:
+                # Add idol
+                ext.write("idols.csv", [player, "no"])
+                await client.say("Added idol.")
+        elif cmd == "strike":
+            player = ext.Player(ext.get("players.csv", 1, player))
+            if player.strikes == 2:
+                await client.say("{} has 3 strikes and is eliminated".format(player.nick))
+                if len(ext.get_players()) <= 10:
+                    role = "Juror"
+                else:
+                    role = "Spectator"
+                ext.remove_player(client, ctx, player.nick, role)
+            else:
+                player.write(strike=True)
+                if player.strikes > 1:
+                    await client.say("{} now has {} strikes.".format(player.nick, player.strikes))
+                else:
+                    await client.say("{} now has {} strike.".format(player.nick, player.strikes))
+        else:
+            await client.say("Invalid command. Commands are `player`, `idol`, and `strike`.")
     else:
         await client.say("You are not a host.")
 
@@ -186,7 +185,7 @@ async def show(ctx, *args):
         elif args[0] == "not_voted":
             # Get players who haven't voted
             players = ext.get_players()
-            not_voted = [player.nick for player in not_voted_all if player.tribe == ext.get_tribal()]
+            not_voted = [player.nick for player in players if player.tribe == ext.get_tribal() and player.vote == "nobody"]
             if not not_voted:
                 await client.say("Everybody has voted.")
             # Check to see if nobody has voted
