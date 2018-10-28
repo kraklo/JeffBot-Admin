@@ -85,7 +85,7 @@ async def add(ctx, *args):
                 await client.say("Unable to change nickname. Please manually change {}'s nickname to {}.".format(user_id, name))
             except AttributeError:
                 await client.say("Unable to change nickname. Please manually change {}'s nickname to {}.".format(user_id, name))
-                
+
             try:
                 await client.add_roles(user, role)
             except discord.errors.Forbidden:
@@ -123,32 +123,32 @@ async def add(ctx, *args):
 @client.command(pass_context=True)
 async def remove(ctx, *args):
     """Removes a player or idol from the database"""
-    if ext.host(ctx):
-        if len(args) == 0:
-            await client.say("Please enter an argument (player, idol).")
-        elif args[0] == "player":
-            nick = args[1]
-            if ext.exists("players.csv", nick):
-                # Remove the player
-                await ext.remove_player(client, ctx, nick, "Spectator")
-                await client.say("Removed {} from player list.".format(nick))
-            else:
-                await client.say("{} was already not a player.".format(nick))
-        elif args[0] == "idol":
-            if len(args) < 2:
-                await client.say("Please specify a player.")
-            else:
-                player = args[1]
-                if ext.exists("players.csv", player):
-                    if ext.exists("idols.csv", player):
-                        ext.write("idols.csv", [player], True)
-                        await client.say("Removed idol.")
-                    else:
-                        await client.say("Player does not have an idol.")
-                else:
-                    await client.say("Player does not exist.")
-    else:
+    if not ext.host(ctx):
         await client.say("You are not a host.")
+        return 1
+
+    if len(args) != 2:
+        await client.say("Please enter a valid amount of arguments.")
+        return 1
+
+    cmd, player = args
+
+    if not ext.exists("players.csv", player):
+        await client.say("Player does not exist.")
+        return 1
+
+    if cmd == "player":
+        # Remove the player
+        await ext.remove_player(client, ctx, nick, "Spectator")
+        await client.say("Removed {} from player list.".format(nick))
+    elif cmd == "idol":
+        if ext.exists("idols.csv", player):
+            ext.write("idols.csv", [player], True)
+            await client.say("Removed idol.")
+        else:
+            await client.say("Player does not have an idol."))
+    else:
+        await client.say("Please enter a valid argument.")
 
 
 @client.command(pass_context=True)
