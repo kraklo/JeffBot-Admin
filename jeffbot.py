@@ -47,9 +47,8 @@ async def add(ctx, *args):
     """Adds a player, idol, or strike to the database"""
     if not ext.host(ctx):
         # Checks to see if user running the command is a host
-
-    await client.say("You are not a host.")
-    return 1
+        await client.say("You are not a host.")
+        return 1
 
     if len(args) != 2:
         # Check for valid amount of arguments
