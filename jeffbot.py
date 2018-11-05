@@ -145,7 +145,7 @@ async def remove(ctx, *args):
             ext.write("idols.csv", [player], True)
             await client.say("Removed idol.")
         else:
-            await client.say("Player does not have an idol."))
+            await client.say("Player does not have an idol.")
     else:
         await client.say("Please enter a valid argument.")
 
