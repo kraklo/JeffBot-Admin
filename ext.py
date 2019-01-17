@@ -221,12 +221,12 @@ def sort_votes(votes):
 def get_player_object(ctx, player):
     """Returns the object for a player"""
     if isinstance(player, Player):
-        user_id = player.user_id[:-5]
+        user_id = player.user_id
     elif '#' in player:
         user_id = player[:-5]
     else:
         user_id = player
-    obj = discord.utils.get(ctx.message.server.members, name=user_id)
+    obj = discord.utils.get(ctx.message.server.members, id=user_id)
     return obj
 
 
