@@ -411,6 +411,12 @@ async def vote(ctx, player):
         if ext.exists("players.csv", player):
             user.write(vote=player)
             await client.say("Voted for {}.".format(player))
+
+            players = ext.get_players()
+            voted = [player for player in players if ext.voted(player.user_id)]
+
+            if len(players) == len(voted):
+                await client.send_message(ext.get_channel("host-channel"), content="Everyone has voted.")
         else:
             await client.say("That is not a player you can vote for.")
 
