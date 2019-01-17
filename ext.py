@@ -256,3 +256,7 @@ def host(ctx):
     if "Host" in [role.name for role in ctx.message.author.roles]:
         return True
     return False
+
+
+def get_channel(ctx, name):
+    return discord.utils.get(ctx.message.server.channels, name=name)
