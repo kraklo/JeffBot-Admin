@@ -37,3 +37,6 @@ with open("idols.csv", 'w+') as f:
 
 with open("token", 'w+') as f:
     f.write(input("Token: "))
+
+with open("playernum", 'w+') as f:
+    f.write("0")

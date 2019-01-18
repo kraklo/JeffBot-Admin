@@ -260,3 +260,40 @@ def host(ctx):
 
 def get_channel(ctx, name):
     return discord.utils.get(ctx.message.server.channels, name=name)
+
+
+def player_num():
+    with open("playernum") as f:
+        return f.read().strip()
+
+
+def get_placing():
+    player_num = len(get("players.csv", 1))
+    total_num = int(get("playernum", 1)[0])
+    place = str(total_num - player_num + 1)
+
+    if place[-1] == '1':
+        place += "st"
+    elif place[-1] == '2':
+        place += "nd"
+    elif place[-1] == '3':
+        place += "rd"
+    else:
+        place += "th"
+
+    return place
+
+
+def get_final_place():
+    place = str(len(get("players.csv", 1)))
+
+    if place[-1] == '1':
+        place += "st"
+    elif place[-1] == '2':
+        place += "nd"
+    elif place[-1] == '3':
+        place += "rd"
+    else:
+        place += "th"
+
+    return place

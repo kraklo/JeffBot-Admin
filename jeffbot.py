@@ -116,6 +116,9 @@ async def add(ctx, *args):
                 await client.say("{} now has {} strikes.".format(player.nick, player.strikes))
             else:
                 await client.say("{} now has {} strike.".format(player.nick, player.strikes))
+            nick = player.nick
+            channel = ext.get_channel(ctx, "{}-confessional".format(nick.lower()))
+            await client.edit_channel(channel, topic="Strikes: {}".format(player.strikes))
     else:
         await client.say("Invalid command. Commands are `player`, `idol`, and `strike`.")
 
@@ -354,9 +357,11 @@ async def read_votes(ctx):
             read = "3rd vote: {}".format(vote)
         else:
             read = "{}th vote: {}".format(count, vote)
-        count += 1
         if vote in idols:
             read += ", does not count"
+        if count == len(final) and out is not None:
+            read = "{} person voted out of Survivor: {}".format(ext.get_placing(), vote)
+        count += 1
         await client.say(read)
 
     # Remove any idols being used
@@ -371,10 +376,21 @@ async def read_votes(ctx):
         player = ext.Player(ext.get("players.csv", 1, out))
         obj = ext.get_player_object(ctx, player)
         await client.say("{}, the tribe has spoken.".format(obj.mention))
-        if len(players) <= 10:
+        jury = False
+        with open("tribes.csv") as f:
+            tribes = f.read().split("\n")
+            if "," not in tribes:
+                jury = True
+        if jury:
             spec = "Juror"
         else:
             spec = "Spectator"
+
+        nick = player.nick
+        channel = ext.get_channel(ctx, "{}-confessional".format(nick.lower()))
+        channel_name = "{}-{}".format(nick.lower(), ext.get_final_place())
+        await client.edit_channel(channel, name="{}-{}".format(nick.lower(), ext.get_final_place()))
+
         # Remove the player
         await ext.remove_player(client, ctx, out, spec)
     # Reset tribal
@@ -423,7 +439,7 @@ async def vote(ctx, player):
 
 
 @client.command(pass_context=True)
-async def sort_tribes(ctx, tribe1, tribe2):
+async def sort_tribes(ctx, tribe1, tribe2, swap=''):
     """Sorts players into tribes. (tribe1, tribe2)"""
 
     if not ext.host(ctx):
@@ -456,6 +472,11 @@ async def sort_tribes(ctx, tribe1, tribe2):
 
     # Write tribes to tribes.csv
     ext.write("tribes.csv", [tribe1, tribe2])
+
+    if not swap:
+        player_count = len(ext.get("players.csv", 1))
+        with open("playernum", 'w') as f:
+            f.write(str(player_count))
 
 
 @client.command(pass_context=True)
