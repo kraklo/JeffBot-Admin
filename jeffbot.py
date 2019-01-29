@@ -39,7 +39,10 @@ async def on_ready():
     print("Bot online.")
     print("Username: {}".format(client.user.name))
     print("ID: {}".format(client.user.id))
-    await client.change_presence(game=discord.Game(name="j.help"))
+    if ext.is_vote_time():
+        await client.change_presence(game=discord.Game(name="{} tribal council".format(ext.get_tribal())))
+    else:
+        await client.change_presence(game=discord.Game(name="j.help"))
 
 
 @client.command(pass_context=True)
@@ -293,12 +296,14 @@ async def vote_time(ctx, tribe=''):
         await client.say("Specify a tribe to allow players to vote.")
     elif not ext.is_vote_time() and ext.exists("tribes.csv", tribe):
         # Toggle vote time and set tribal to tribe
+        await client.change_presence(game=discord.Game(name="{} tribal council".format(tribe)))
         ext.toggle()
         ext.set_tribal(tribe)
         await client.say("Players can now vote.")
     elif not ext.is_vote_time() and not ext.exists("tribes.csv", tribe):
         await client.say("Tribe {} does not exist.".format(tribe))
     else:
+        await client.change_presence(game=discord.Game(name="j.help"))
         ext.toggle()
         ext.set_tribal('none')
         await client.say("Players can now no longer vote.")
@@ -393,8 +398,10 @@ async def read_votes(ctx):
 
         # Remove the player
         await ext.remove_player(client, ctx, out, spec)
+
     # Reset tribal
     ext.set_tribal('none')
+    await client.change_presence(game=discord.Game(name="j.help"))
 
 
 @client.command(pass_context=True)
